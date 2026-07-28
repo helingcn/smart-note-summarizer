@@ -8,25 +8,37 @@ st.set_page_config(page_title="SmartDigest", page_icon="📝", layout="wide")
 
 st.markdown("""
 <style>
+html, body, [data-testid="stAppViewContainer"] {
+    font-size: 18px;
+}
 .stat-card {
-    border-radius: 10px;
-    padding: 14px 16px;
-}
-.stat-accent { background-color: #E6F1FB; color: #0C447C; }
-.stat-success { background-color: #EAF3DE; color: #27500A; }
-.stat-label { font-size: 13px; font-weight: 500; margin: 0; }
-.stat-value { font-size: 24px; font-weight: 700; margin: 4px 0 0; }
-.history-card {
-    border: 1px solid rgba(128,128,128,0.25);
     border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 12px;
+    padding: 18px 20px;
 }
+.stat-accent { background-color: #0C2A47; color: #B5D4F4; }
+.stat-success { background-color: #173404; color: #C0DD97; }
+.stat-label { font-size: 0.9rem; font-weight: 500; margin: 0; opacity: 0.85; }
+.stat-value { font-size: 2rem; font-weight: 600; margin: 8px 0 0; }
+.history-card {
+    background-color: #161A23;
+    border: 1px solid #2A2E3A;
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+}
+.history-card p { font-size: 1rem !important; }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📝 SmartDigest")
-st.caption("Yerel yapay zeka ile akıllı özetleme")
+st.markdown("""
+<div style="display:flex; align-items:center; gap:14px; margin-bottom:20px;">
+  <div style="width:44px; height:44px; border-radius:12px; background:#378ADD; display:flex; align-items:center; justify-content:center; font-size:22px;">📝</div>
+  <div>
+    <p style="font-size:26px; font-weight:600; margin:0; color:#F2F2F0;">SmartDigest</p>
+    <p style="font-size:15px; color:#9A9A96; margin:0;">Yerel yapay zeka ile akıllı özetleme</p>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
 try:
     resp = requests.get(f"{API_URL}/history")
@@ -37,6 +49,7 @@ except requests.exceptions.RequestException:
     st.error("Backend'e ulaşılamıyor. Sunucunun çalıştığından emin ol.")
 
 total_count = len(history_data)
+
 one_week_ago = datetime.now() - timedelta(days=7)
 week_count = 0
 for item in history_data:
@@ -87,25 +100,52 @@ with tab1:
         text = st.text_area("Özetlenecek metni buraya yapıştırın", height=200)
 
     if st.button("Özetle", type="primary") and text:
-        with st.spinner("Özetleniyor, bu biraz sürebilir..."):
+        with st.status("Özetleniyor...", expanded=True) as status:
+            st.write("Metin backend'e gönderiliyor...")
             try:
+                status.update(label="Model özetliyor, bu biraz sürebilir...")
                 response = requests.post(f"{API_URL}/summarize", json={"text": text})
                 response.raise_for_status()
                 summary = response.json()["summary"]
+                status.update(label="Tamamlandı", state="complete", expanded=False)
                 st.success("Özet hazır")
                 st.write(summary)
             except requests.exceptions.RequestException as e:
+                status.update(label="Hata oluştu", state="error")
                 st.error(f"Hata: {e}")
 
 with tab2:
-    if not history_data:
-        st.info("Henüz kayıtlı özet yok.")
+    search_query = st.text_input("Ara", placeholder="Özet içinde ara...")
+
+    filtered_data = history_data
+    if search_query:
+        filtered_data = [
+            item for item in history_data
+            if search_query.lower() in item["summary"].lower()
+        ]
+
+    if not filtered_data:
+        st.info("Sonuç bulunamadı." if search_query else "Henüz kayıtlı özet yok.")
     else:
-        for item in history_data:
+        for item in filtered_data:
             st.markdown(f"""
             <div class="history-card">
-                <p style="font-size:12px; color:#888; margin:0 0 6px;">{item['created_at']}</p>
-                <p style="font-size:13px; font-weight:600; margin:0 0 4px;">Özet</p>
-                <p style="font-size:14px; margin:0;">{item['summary']}</p>
+                <p style="font-size:12px; color:#9A9A96; margin:0 0 6px;">{item['created_at']}</p>
+                <p style="font-size:13px; font-weight:600; margin:0 0 4px; color:#F2F2F0;">Özet</p>
+                <p style="font-size:14px; margin:0; color:#D5D5D2;">{item['summary']}</p>
             </div>
             """, unsafe_allow_html=True)
+
+            col_a, col_b, col_c = st.columns([1, 1, 4])
+            with col_a:
+                st.download_button(
+                    "İndir",
+                    data=item["summary"],
+                    file_name=f"ozet_{item['id']}.txt",
+                    key=f"download_{item['id']}"
+                )
+            with col_b:
+                if st.button("Sil", key=f"delete_{item['id']}"):
+                    requests.delete(f"{API_URL}/history/{item['id']}")
+                    st.rerun()
+            st.write("")

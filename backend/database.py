@@ -36,4 +36,12 @@ def get_history():
 
     conn.close()
     return rows
+
+
+def delete_summary(summary_id):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM summaries WHERE id = ?", (summary_id,))
+    conn.commit()
+    conn.close()
                    
