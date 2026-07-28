@@ -17,3 +17,9 @@ __pycache__/
 
 # Logs
 *.log
+
+# Database
+*.db
+
+# Claude
+.claude/

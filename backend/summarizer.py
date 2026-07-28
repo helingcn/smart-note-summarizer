@@ -1,7 +1,7 @@
 import ollama
 
 def summarize_text(text, model="qwen2.5:7b"):
-    prompt = f"Summerize the key points of the following text:\n\n{text}"
+    prompt = f"Aşağıdaki metindeki ana fikirleri özetle:\n\n{text}"
     response = ollama.chat(model=model, messages=[
         {"role": "user" , "content": prompt}])
     return response["message"]["content"]
