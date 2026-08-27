@@ -9,8 +9,8 @@ from summarizer import (
     word_target,
 )
 
-
 # --- bullet_limit / word_target -------------------------------------------------
+
 
 def test_bullet_limit_detailed_ignores_text_length():
     assert bullet_limit(500, "detailed") == 8
@@ -37,6 +37,7 @@ def test_word_target_detailed_ignores_text_length():
 
 # --- max_output_tokens ------------------------------------------------------
 
+
 def test_max_output_tokens_grows_with_word_target():
     short_budget = max_output_tokens(2_000, "balanced")
     long_budget = max_output_tokens(10_000, "balanced")
@@ -49,6 +50,7 @@ def test_max_output_tokens_has_a_safety_margin_over_word_count():
 
 
 # --- _numbers_in / _drop_unverified_numbers ---------------------------------
+
 
 def test_numbers_in_extracts_decimal_and_integer_numbers():
     assert _numbers_in("Oran yüzde 10,5 iken 2030'da 7 katına çıktı.") == {"10,5", "2030", "7"}
@@ -92,6 +94,7 @@ def test_drop_unverified_numbers_ignores_single_digit_labels():
 
 # --- _drop_duplicate_highlights ---------------------------------------------
 
+
 def test_drop_duplicate_highlights_removes_near_verbatim_repeat():
     overview = "Bitki bazlı ürünler pazarı geleneksel hayvancılığa karşı büyüyor ancak maliyetler yüksek kalıyor."
     highlights = [
@@ -114,6 +117,7 @@ def test_drop_duplicate_highlights_keeps_distinct_items():
 
 # --- _drop_incomplete_highlights --------------------------------------------
 
+
 def test_drop_incomplete_highlights_removes_unterminated_sentence():
     highlights = [
         "[Önemli] Şirket, işten çıkarma yerine 3.400 çalışanını yeni",
@@ -132,6 +136,7 @@ def test_drop_incomplete_highlights_keeps_sentences_ending_in_quotes_or_parens()
 
 
 # --- split_text ---------------------------------------------------------------
+
 
 def test_split_text_respects_chunk_size_boundary():
     text = " ".join(f"Cümle {i}." for i in range(200))

@@ -1,7 +1,6 @@
 from unittest.mock import Mock
 
 import requests
-
 from summary_utils import (
     clean_summary_text,
     concise_overview,

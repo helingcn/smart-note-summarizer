@@ -1,0 +1,46 @@
+[tool.pytest.ini_options]
+testpaths = ["backend", "frontend", "evals", "."]
+python_files = ["test_*.py"]
+markers = [
+  "live_api: gerçek Gemini API anahtarı ve ağ erişimi gerektirir",
+  "ocr: yerel Tesseract kurulumu gerektirir",
+  "e2e: çalışan uygulama ve Playwright tarayıcısı gerektirir",
+]
+addopts = "--strict-markers"
+
+[tool.coverage.run]
+branch = true
+source = ["backend", "frontend", "evals"]
+omit = [
+  "*/test_*.py",
+  "frontend/app.py",
+  "frontend/auth_ui.py",
+  "frontend/history_ui.py",
+  "frontend/state.py",
+  "frontend/summary_ui.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 60
+exclude_lines = ["pragma: no cover", "if TYPE_CHECKING:", "if __name__ == .__main__.*:"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+extend-exclude = [".venv", "venv"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+ignore = ["B008"]
+
+[tool.mypy]
+python_version = "3.13"
+check_untyped_defs = true
+ignore_missing_imports = true
+follow_imports = "skip"
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+pretty = true

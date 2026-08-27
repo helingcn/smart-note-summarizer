@@ -4,26 +4,112 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-          cache: "pip"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Ruff lint
+        run: ruff check backend frontend evals scripts test_extractor.py
+      - name: Ruff format kontrolü
+        run: ruff format --check backend frontend evals scripts test_extractor.py
+      - name: Statik tip kontrolü
+        run: mypy backend/models.py frontend/summary_utils.py evals/schemas.py evals/metrics.py
+      - name: Test ve coverage
+        run: pytest -m "not live_api and not e2e" --cov --cov-report=term-missing --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
 
-      - name: Bağımlılıkları kur
-        run: pip install -r requirements.txt
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install pip-audit
+      - name: Python bağımlılık güvenlik taraması
+        run: pip-audit -r requirements-backend.txt -r requirements-frontend.txt
 
-      - name: Testleri çalıştır
-        run: pytest backend/ frontend/ evals/ test_extractor.py -q
-
-      - name: Docker Compose yapılandırmasını doğrula
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - name: Compose yapılandırmasını doğrula
         run: docker compose config --quiet
-
-      - name: Container imajlarını oluştur
+      - name: Container image'larını oluştur
         run: docker compose build backend frontend
+      - name: Backend image güvenlik taraması
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: smartdigest-backend:latest
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+      - name: Frontend image güvenlik taraması
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: smartdigest-frontend:latest
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          severity: HIGH,CRITICAL
+
+  browser-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp .env.example .env
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: playwright install --with-deps chromium
+      - name: Uygulamayı başlat
+        run: docker compose up -d --build redis backend frontend
+      - name: Frontend'in hazır olmasını bekle
+        run: |
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:8501/_stcore/health && exit 0
+            sleep 2
+          done
+          docker compose logs
+          exit 1
+      - name: Browser smoke testi
+        env:
+          SMARTDIGEST_E2E_URL: http://127.0.0.1:8501
+        run: pytest frontend/test_e2e.py -m e2e -q
+      - if: always()
+        run: docker compose logs
+
+  live-gemini:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements.txt
+      - name: Kontrollü Gemini entegrasyon testi
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          test -n "$GEMINI_API_KEY"
+          pytest backend/test_live_integrations.py -m live_api -q

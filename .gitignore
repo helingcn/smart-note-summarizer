@@ -25,6 +25,13 @@ __pycache__/
 
 # Generated evaluation reports
 evals/reports/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+test-results/
+playwright-report/
 
 # Claude
 .claude/

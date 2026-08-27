@@ -78,9 +78,7 @@ def test_register_rejects_domain_without_tld():
 
 
 def test_register_rejects_short_password():
-    response = client.post(
-        "/auth/register", json={"email": "kisa@example.com", "password": "123"}
-    )
+    response = client.post("/auth/register", json={"email": "kisa@example.com", "password": "123"})
     assert response.status_code == 400
 
 
@@ -146,7 +144,8 @@ def test_login_unknown_email_still_hashes_password(monkeypatch):
     # ile çağrılıyor mu, gerçek kullanıcı bulunduğundaki ile aynı yol mu izleniyor.
     calls = []
     monkeypatch.setattr(
-        main, "verify_password",
+        main,
+        "verify_password",
         lambda password, stored_hash: calls.append(stored_hash) or False,
     )
     response = client.post("/auth/login", json={"email": "hicyok@example.com", "password": "x"})
@@ -170,9 +169,7 @@ def test_login_rate_limit_blocks_repeated_attempts(monkeypatch):
 
 def test_forgot_and_reset_password_flow():
     email = "reset-flow@example.com"
-    registered = client.post(
-        "/auth/register", json={"email": email, "password": "eskisifre1"}
-    )
+    registered = client.post("/auth/register", json={"email": email, "password": "eskisifre1"})
     assert registered.status_code == 201
     forgot = client.post("/auth/forgot-password", json={"email": email})
     assert forgot.status_code == 200
@@ -183,20 +180,22 @@ def test_forgot_and_reset_password_flow():
         json={"token": token, "new_password": "yenisifre1"},
     )
     assert reset.status_code == 200
-    assert client.post(
-        "/auth/login", json={"email": email, "password": "yenisifre1"}
-    ).status_code == 200
-    assert client.post(
-        "/auth/reset-password",
-        json={"token": token, "new_password": "baskasifre1"},
-    ).status_code == 400
+    assert (
+        client.post("/auth/login", json={"email": email, "password": "yenisifre1"}).status_code
+        == 200
+    )
+    assert (
+        client.post(
+            "/auth/reset-password",
+            json={"token": token, "new_password": "baskasifre1"},
+        ).status_code
+        == 400
+    )
 
 
 def test_logout_all_invalidates_existing_token():
     email = "logout-all@example.com"
-    registered = client.post(
-        "/auth/register", json={"email": email, "password": "test1234"}
-    ).json()
+    registered = client.post("/auth/register", json={"email": email, "password": "test1234"}).json()
     headers = {"Authorization": f"Bearer {registered['access_token']}"}
     assert client.post("/auth/logout-all", headers=headers).status_code == 200
     assert client.get("/auth/me", headers=headers).status_code == 401
@@ -204,17 +203,15 @@ def test_logout_all_invalidates_existing_token():
 
 def test_delete_account_removes_login():
     email = "delete-me@example.com"
-    registered = client.post(
-        "/auth/register", json={"email": email, "password": "test1234"}
-    ).json()
+    registered = client.post("/auth/register", json={"email": email, "password": "test1234"}).json()
     headers = {"Authorization": f"Bearer {registered['access_token']}"}
     deleted = client.request(
         "DELETE", "/auth/account", headers=headers, json={"password": "test1234"}
     )
     assert deleted.status_code == 200
-    assert client.post(
-        "/auth/login", json={"email": email, "password": "test1234"}
-    ).status_code == 401
+    assert (
+        client.post("/auth/login", json={"email": email, "password": "test1234"}).status_code == 401
+    )
 
 
 def test_me_returns_authenticated_email(auth_headers):
@@ -257,11 +254,22 @@ def test_rate_limit_returns_429(auth_headers, monkeypatch):
 
 
 def test_job_success_returns_summary_and_evidence(auth_headers, monkeypatch):
-    monkeypatch.setattr(job_manager_module, "summarize_long_text", lambda *a, **k: "### Özet\nTest özeti.")
+    monkeypatch.setattr(
+        job_manager_module, "summarize_long_text", lambda *a, **k: "### Özet\nTest özeti."
+    )
     monkeypatch.setattr(
         job_manager_module,
         "build_summary_evidence",
-        lambda summary, text: [{"claim": "Test özeti.", "page": 1, "paragraph": 1, "quote": "kaynak", "support": 90, "status": "supported"}],
+        lambda summary, text: [
+            {
+                "claim": "Test özeti.",
+                "page": 1,
+                "paragraph": 1,
+                "quote": "kaynak",
+                "support": 90,
+                "status": "supported",
+            }
+        ],
     )
     monkeypatch.setattr(job_manager_module, "save_summary", lambda **k: 1)
 
@@ -338,14 +346,18 @@ def test_cancel_unknown_job_returns_404(auth_headers):
 
 def test_extract_rejects_non_pdf_extension(auth_headers):
     response = client.post(
-        "/extract", headers=auth_headers, files={"file": ("not_a_pdf.txt", b"merhaba", "text/plain")}
+        "/extract",
+        headers=auth_headers,
+        files={"file": ("not_a_pdf.txt", b"merhaba", "text/plain")},
     )
     assert response.status_code == 400
 
 
 def test_extract_rejects_wrong_mime_type(auth_headers):
     response = client.post(
-        "/extract", headers=auth_headers, files={"file": ("dosya.pdf", b"%PDF-1.4 ...", "image/png")}
+        "/extract",
+        headers=auth_headers,
+        files={"file": ("dosya.pdf", b"%PDF-1.4 ...", "image/png")},
     )
     assert response.status_code == 400
 
@@ -374,7 +386,9 @@ def test_chat_rejects_oversized_question(auth_headers):
 
 
 def test_chat_returns_answer_and_sources(auth_headers, monkeypatch):
-    monkeypatch.setattr(main, "answer_question", lambda text, question: ("Cevap.", ["Sayfa 1: kanıt"]))
+    monkeypatch.setattr(
+        main, "answer_question", lambda text, question: ("Cevap.", ["Sayfa 1: kanıt"])
+    )
     response = client.post(
         "/chat", json={"text": "belge metni", "question": "soru"}, headers=auth_headers
     )
@@ -383,9 +397,19 @@ def test_chat_returns_answer_and_sources(auth_headers, monkeypatch):
 
 
 def test_history_endpoints_use_wired_database_functions(auth_headers, monkeypatch):
-    monkeypatch.setattr(main, "get_history", lambda user_id, limit, offset: [
-        {"id": 1, "summary": "Özet", "created_at": "2026-01-01T00:00:00", "has_source": False, "source_expires_at": None}
-    ])
+    monkeypatch.setattr(
+        main,
+        "get_history",
+        lambda user_id, limit, offset: [
+            {
+                "id": 1,
+                "summary": "Özet",
+                "created_at": "2026-01-01T00:00:00",
+                "has_source": False,
+                "source_expires_at": None,
+            }
+        ],
+    )
     monkeypatch.setattr(main, "get_summary_source", lambda user_id, item_id: None)
     monkeypatch.setattr(main, "delete_summary", lambda user_id, item_id: False)
     monkeypatch.setattr(main, "clear_history", lambda user_id: 3)

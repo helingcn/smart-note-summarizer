@@ -5,12 +5,11 @@ import time
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
-from streamlit_local_storage import LocalStorage
-
 from api_client import APIClient, client_forward_headers
 from auth_ui import render_account
 from history_ui import render_history
 from state import initialize_session_state
+from streamlit_local_storage import LocalStorage
 from summary_ui import copy_summary_button, render_summary_section
 from summary_utils import (
     clean_summary_text,
@@ -44,8 +43,10 @@ verify_token = st.query_params.get("verify_token")
 if verify_token:
     try:
         response = requests.post(
-            f"{API_URL}/auth/verify-email", headers=client_forward_headers(),
-            json={"token": verify_token}, timeout=10
+            f"{API_URL}/auth/verify-email",
+            headers=client_forward_headers(),
+            json={"token": verify_token},
+            timeout=10,
         )
         response.raise_for_status()
         st.success("E-posta adresiniz doğrulandı. Şimdi giriş yapabilirsiniz.")
@@ -136,7 +137,8 @@ if not st.session_state.access_token:
                     response = requests.post(
                         f"{API_URL}/auth/forgot-password",
                         headers=client_forward_headers(),
-                        json={"email": forgot_email}, timeout=10,
+                        json={"email": forgot_email},
+                        timeout=10,
                     )
                     response.raise_for_status()
                     data = response.json()
@@ -165,7 +167,9 @@ if not st.session_state.access_token:
                 response.raise_for_status()
                 data = response.json()
                 if data.get("verification_required"):
-                    st.success("Kayıt oluşturuldu. E-posta adresinize gönderilen bağlantıyla hesabınızı doğrulayın.")
+                    st.success(
+                        "Kayıt oluşturuldu. E-posta adresinize gönderilen bağlantıyla hesabınızı doğrulayın."
+                    )
                     if data.get("development_token"):
                         st.info(f"Geliştirme doğrulama kodu: {data['development_token']}")
                 else:
@@ -178,6 +182,7 @@ if not st.session_state.access_token:
             except requests.exceptions.RequestException as error:
                 st.error(f"Kayıt başarısız: {error_detail(error)}")
     st.stop()
+
 
 @st.cache_data(show_spinner="Belgeden metin çıkarılıyor...")
 def extract_pdf_text(file_bytes: bytes, file_name: str) -> dict:
@@ -196,10 +201,13 @@ def extract_pdf_text(file_bytes: bytes, file_name: str) -> dict:
 
 header_left, header_right = st.columns([5, 1.4])
 with header_left:
-    st.markdown("""
+    st.markdown(
+        """
     <p class="sd-name">SmartDigest</p>
     <p class="sd-privacy">Özetleme için metinler Gemini API'ye (Google) gönderilir.</p>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
 with header_right:
     st.caption(st.session_state.user_email)
     if st.button("Çıkış yap", use_container_width=True):
@@ -222,10 +230,16 @@ tab1, tab2, tab3 = st.tabs(["Yeni özet", "Geçmiş", "Hesap"])
 
 with tab1:
     with st.container(border=True):
-        st.markdown('<p class="sd-panel-title">İçeriğini ekle</p><p class="sd-panel-copy">Bir PDF yükle veya özetlemek istediğin metni yapıştır.</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="sd-panel-title">İçeriğini ekle</p><p class="sd-panel-copy">Bir PDF yükle veya özetlemek istediğin metni yapıştır.</p>',
+            unsafe_allow_html=True,
+        )
         choice = st.segmented_control(
-            "Kaynak", ["PDF yükle", "Metin yapıştır"],
-            default="PDF yükle", required=True, label_visibility="collapsed",
+            "Kaynak",
+            ["PDF yükle", "Metin yapıştır"],
+            default="PDF yükle",
+            required=True,
+            label_visibility="collapsed",
         )
 
         st.markdown('<p class="sd-field-label">Özet modu</p>', unsafe_allow_html=True)
@@ -233,17 +247,23 @@ with tab1:
             "Özet modu",
             ["fast", "verified"],
             format_func=lambda value: "Hızlı" if value == "fast" else "Kaynak kontrollü",
-            default="fast", required=True, label_visibility="collapsed",
+            default="fast",
+            required=True,
+            label_visibility="collapsed",
             help="Hızlı mod tek işlemde özetler. Kaynak kontrollü mod ikinci geçiş yapar ve maddelere sayfa/destek bilgisi ekler; destek puanı kelime örtüşmesine dayanır, insan doğrulaması veya anlamsal doğrulama değildir.",
         )
-        st.caption("Hızlı: daha kısa bekleme · Kaynak kontrollü: sayfa kaynağı ve kelime örtüşmesi puanıyla ikinci geçiş")
+        st.caption(
+            "Hızlı: daha kısa bekleme · Kaynak kontrollü: sayfa kaynağı ve kelime örtüşmesi puanıyla ikinci geçiş"
+        )
 
         st.markdown('<p class="sd-field-label">Özet uzunluğu</p>', unsafe_allow_html=True)
         length = st.segmented_control(
             "Özet uzunluğu",
             ["balanced", "detailed"],
             format_func=lambda value: {"balanced": "Dengeli", "detailed": "Detaylı"}[value],
-            default="balanced", required=True, label_visibility="collapsed",
+            default="balanced",
+            required=True,
+            label_visibility="collapsed",
         )
 
         retain_source = st.checkbox(
@@ -267,7 +287,9 @@ with tab1:
         st.markdown('<p class="sd-field-label">İçerik</p>', unsafe_allow_html=True)
         text = None
         if choice == "PDF yükle":
-            uploaded_file = st.file_uploader("PDF belgesi", type="pdf", label_visibility="collapsed")
+            uploaded_file = st.file_uploader(
+                "PDF belgesi", type="pdf", label_visibility="collapsed"
+            )
             if uploaded_file:
                 try:
                     extracted = extract_pdf_text(uploaded_file.getvalue(), uploaded_file.name)
@@ -286,9 +308,17 @@ with tab1:
             # script, Shift'siz düz Enter'ı yakalayıp satır eklemeden Ctrl/Cmd+Enter'a
             # dönüştürür; böylece Streamlit'in kendi doğrulanmış gönderim akışı çalışır.
             with st.form("paste_text_form", border=False):
-                text = st.text_area("Özetlenecek metin", height=220, placeholder="Metnini buraya yapıştır…", label_visibility="collapsed", key="paste_text")
+                text = st.text_area(
+                    "Özetlenecek metin",
+                    height=220,
+                    placeholder="Metnini buraya yapıştır…",
+                    label_visibility="collapsed",
+                    key="paste_text",
+                )
                 st.caption(f"En fazla {MAX_SUMMARY_INPUT_CHARS:,} karakter kabul edilir.")
-                submitted = st.form_submit_button("Özeti oluştur", type="primary", use_container_width=True)
+                submitted = st.form_submit_button(
+                    "Özeti oluştur", type="primary", use_container_width=True
+                )
                 components.html(
                     """
                     <script>
@@ -316,7 +346,11 @@ with tab1:
                     height=0,
                 )
             if text and st.session_state.latest_summary:
-                st.button("Temizle", use_container_width=True, on_click=lambda: st.session_state.update(paste_text=""))
+                st.button(
+                    "Temizle",
+                    use_container_width=True,
+                    on_click=lambda: st.session_state.update(paste_text=""),
+                )
 
         if submitted:
             if not text:
@@ -350,6 +384,7 @@ with tab1:
                     st.error(f"Özet oluşturulamadı: {error_detail(error)}")
 
     if st.session_state.active_job_id:
+
         @st.fragment(run_every=1)
         def _poll_active_job():
             job_id = st.session_state.active_job_id
@@ -377,7 +412,9 @@ with tab1:
             with cancel_col:
                 if st.button("İptal et", key=f"cancel_{job_id}", use_container_width=True):
                     try:
-                        requests.delete(f"{API_URL}/jobs/{job_id}", headers=auth_headers(), timeout=10)
+                        requests.delete(
+                            f"{API_URL}/jobs/{job_id}", headers=auth_headers(), timeout=10
+                        )
                     except requests.exceptions.RequestException:
                         pass
 
@@ -423,7 +460,7 @@ with tab1:
             cleaned
             for item in sections["highlights"]
             if (cleaned := clean_summary_text(item)) and cleaned not in numeric_items
-        ][:8 if is_detailed else 5]
+        ][: 8 if is_detailed else 5]
         facts = numeric_facts(sections["numbers"])
 
         st.markdown(
@@ -446,7 +483,7 @@ with tab1:
         st.markdown(
             '<div class="sd-summary-card"><p class="sd-summary-label">'
             + ("Detaylı özet" if is_detailed else "Kısa özet")
-            + '</p>'
+            + "</p>"
             f'<p class="sd-summary-copy">{html.escape(overview)}</p></div>',
             unsafe_allow_html=True,
         )
@@ -476,7 +513,9 @@ with tab1:
 
         action1, action2, action3 = st.columns([2, 1, 2])
         with action1:
-            st.download_button("↓ TXT indir", summary, "smartdigest_ozet.txt", use_container_width=True)
+            st.download_button(
+                "↓ TXT indir", summary, "smartdigest_ozet.txt", use_container_width=True
+            )
         with action2:
             copy_summary_button(summary)
         with action3:
@@ -506,7 +545,8 @@ with tab1:
                     label = status_labels.get(status, "İncelenmeli")
                     verification = (
                         f"anlamsal güven %{round(item['confidence'] * 100)}"
-                        if item.get("verification") == "semantic" and item.get("confidence") is not None
+                        if item.get("verification") == "semantic"
+                        and item.get("confidence") is not None
                         else f"kelime desteği %{item['support']}"
                     )
                     st.markdown(
@@ -528,11 +568,29 @@ with tab1:
         with st.expander("Dışa aktar", expanded=False):
             export1, export2, export3 = st.columns(3)
             with export1:
-                st.download_button("Markdown", summary, "smartdigest_ozet.md", mime="text/markdown", use_container_width=True)
+                st.download_button(
+                    "Markdown",
+                    summary,
+                    "smartdigest_ozet.md",
+                    mime="text/markdown",
+                    use_container_width=True,
+                )
             with export2:
-                st.download_button("Toplantı notu", meeting_notes(summary), "toplanti_notu.md", mime="text/markdown", use_container_width=True)
+                st.download_button(
+                    "Toplantı notu",
+                    meeting_notes(summary),
+                    "toplanti_notu.md",
+                    mime="text/markdown",
+                    use_container_width=True,
+                )
             with export3:
-                st.download_button("E-posta taslağı", email_draft(summary), "eposta_taslagi.txt", mime="text/plain", use_container_width=True)
+                st.download_button(
+                    "E-posta taslağı",
+                    email_draft(summary),
+                    "eposta_taslagi.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                )
 
         with st.expander("Belgeyle sohbet", expanded=False):
             st.caption("Sorular yalnızca bu özetin oluşturulduğu belgeden yanıtlanır.")
@@ -558,7 +616,9 @@ with tab1:
                                 timeout=(5, 180),
                             )
                             response.raise_for_status()
-                            st.session_state.chat_messages.append({"question": question, **response.json()})
+                            st.session_state.chat_messages.append(
+                                {"question": question, **response.json()}
+                            )
                             st.rerun()
                         except requests.exceptions.RequestException as error:
                             st.error(f"Soru yanıtlanamadı: {error_detail(error)}")

@@ -1,11 +1,17 @@
 """Hesap doğrulama ve şifre sıfırlama e-postaları."""
 
-from email.message import EmailMessage
 import smtplib
+from email.message import EmailMessage
 
 from config import (
-    APP_ENV, PUBLIC_APP_URL, SMTP_FROM, SMTP_HOST, SMTP_PASSWORD, SMTP_PORT,
-    SMTP_USERNAME, SMTP_USE_TLS,
+    APP_ENV,
+    PUBLIC_APP_URL,
+    SMTP_FROM,
+    SMTP_HOST,
+    SMTP_PASSWORD,
+    SMTP_PORT,
+    SMTP_USE_TLS,
+    SMTP_USERNAME,
 )
 
 

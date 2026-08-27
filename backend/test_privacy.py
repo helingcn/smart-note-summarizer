@@ -6,9 +6,7 @@ import database
 def test_history_is_user_scoped_and_does_not_return_source(tmp_path: Path):
     db_path = tmp_path / "privacy.db"
     database.init_db(db_path)
-    alice_id = database.save_summary(
-        "alice", "Alice özeti", "çok gizli kaynak", 1, db_path
-    )
+    alice_id = database.save_summary("alice", "Alice özeti", "çok gizli kaynak", 1, db_path)
     database.save_summary("bob", "Bob özeti", db_path=db_path)
 
     alice_history = database.get_history("alice", db_path=db_path)

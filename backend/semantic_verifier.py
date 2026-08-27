@@ -33,10 +33,14 @@ def _cosine(left: list[float], right: list[float]) -> float:
     if not left or not right or len(left) != len(right):
         return 0.0
     denominator = math.sqrt(sum(x * x for x in left)) * math.sqrt(sum(x * x for x in right))
-    return sum(x * y for x, y in zip(left, right)) / denominator if denominator else 0.0
+    return (
+        sum(x * y for x, y in zip(left, right, strict=False)) / denominator if denominator else 0.0
+    )
 
 
-def retrieve_semantic_evidence(claim: str, source_text: str, limit: int = 3) -> list[SemanticEvidence]:
+def retrieve_semantic_evidence(
+    claim: str, source_text: str, limit: int = 3
+) -> list[SemanticEvidence]:
     passages = _passages(source_text)
     if not passages:
         return []
@@ -55,7 +59,7 @@ def retrieve_semantic_evidence(claim: str, source_text: str, limit: int = 3) -> 
     ranked = sorted(
         (
             SemanticEvidence(page, paragraph, text, _cosine(claim_vector, _vector(embedding)))
-            for (page, paragraph, text), embedding in zip(passages, embeddings[1:])
+            for (page, paragraph, text), embedding in zip(passages, embeddings[1:], strict=False)
         ),
         key=lambda item: item.similarity,
         reverse=True,
@@ -65,7 +69,11 @@ def retrieve_semantic_evidence(claim: str, source_text: str, limit: int = 3) -> 
 
 def judge_nli(claim: str, evidence: list[SemanticEvidence]) -> dict[str, Any]:
     if not evidence:
-        return {"status": "source_not_found", "confidence": 0.0, "reason": "Anlamsal kaynak adayı bulunamadı."}
+        return {
+            "status": "source_not_found",
+            "confidence": 0.0,
+            "reason": "Anlamsal kaynak adayı bulunamadı.",
+        }
     context = "\n\n".join(
         f"[Kaynak {index} · Sayfa {item.page} · Paragraf {item.paragraph}]\n{item.text}"
         for index, item in enumerate(evidence, 1)
@@ -166,7 +174,8 @@ varsa contradicted; kanıt yetersizse uncertain seç. Kaynak dışı bilgi kulla
             ),
         )
         judgments = {
-            int(item["index"]): item for item in json.loads(response.text or "{}").get("judgments", [])
+            int(item["index"]): item
+            for item in json.loads(response.text or "{}").get("judgments", [])
         }
     except Exception:
         return evidence

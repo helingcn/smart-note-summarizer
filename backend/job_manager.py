@@ -8,8 +8,16 @@ from concurrent.futures import ThreadPoolExecutor
 
 from config import JOB_QUEUE_LIMIT, JOB_TTL_HOURS, JOB_WORKERS, logger
 from database import (
-    cancel_job_record, claim_next_job, connection, create_job_record, get_job_record,
-    heartbeat_job, job_cancel_requested, purge_old_jobs, recover_interrupted_jobs, save_summary,
+    cancel_job_record,
+    claim_next_job,
+    connection,
+    create_job_record,
+    get_job_record,
+    heartbeat_job,
+    job_cancel_requested,
+    purge_old_jobs,
+    recover_interrupted_jobs,
+    save_summary,
     update_job_record,
 )
 from models import SummarizeRequest
@@ -63,8 +71,12 @@ class JobManager:
                     request = SummarizeRequest.model_validate_json(payload)
                 except Exception as error:
                     update_job_record(
-                        job_id, status="failed", progress=100,
-                        message="İş kaydı okunamadı.", error=str(error), encrypted_request=None,
+                        job_id,
+                        status="failed",
+                        progress=100,
+                        message="İş kaydı okunamadı.",
+                        error=str(error),
+                        encrypted_request=None,
                     )
                     self._slots.release()
                     continue
@@ -98,12 +110,17 @@ class JobManager:
             update_job_record(job_id, progress=87, message="Kaynak kanıtları eşleştiriliyor…")
             evidence = build_summary_evidence(summary, request.text)
             if request.mode == "verified" and evidence:
-                update_job_record(job_id, progress=89, message="Kanıtlar anlamsal olarak doğrulanıyor…")
+                update_job_record(
+                    job_id, progress=89, message="Kanıtlar anlamsal olarak doğrulanıyor…"
+                )
                 evidence = verify_evidence_batch(evidence, request.text)
             if job_cancel_requested(job_id):
                 update_job_record(
-                    job_id, status="cancelled", progress=100,
-                    message="İşlem iptal edildi; sonuç kaydedilmedi.", encrypted_request=None,
+                    job_id,
+                    status="cancelled",
+                    progress=100,
+                    message="İşlem iptal edildi; sonuç kaydedilmedi.",
+                    encrypted_request=None,
                 )
                 return
             update_job_record(job_id, progress=92, message="Sonuç güvenli biçimde kaydediliyor.")
@@ -114,24 +131,37 @@ class JobManager:
             if row is None:
                 raise RuntimeError("İş kaydı bulunamadı.")
             save_summary(
-                user_id=row["user_id"], summary=summary,
+                user_id=row["user_id"],
+                summary=summary,
                 source_text=request.text if request.retain_source else None,
                 retention_days=request.retention_days if request.retain_source else None,
             )
             update_job_record(
-                job_id, status="succeeded", progress=100, message="Özet hazır.",
-                summary=summary, evidence=evidence, encrypted_request=None,
+                job_id,
+                status="succeeded",
+                progress=100,
+                message="Özet hazır.",
+                summary=summary,
+                evidence=evidence,
+                encrypted_request=None,
             )
         except JobCancelled:
             update_job_record(
-                job_id, status="cancelled", progress=100,
-                message="İşlem iptal edildi; sonuç kaydedilmedi.", encrypted_request=None,
+                job_id,
+                status="cancelled",
+                progress=100,
+                message="İşlem iptal edildi; sonuç kaydedilmedi.",
+                encrypted_request=None,
             )
         except Exception as error:
             logger.exception("Özetleme işi başarısız oldu: %s", job_id)
             update_job_record(
-                job_id, status="failed", progress=100,
-                message="Özetleme tamamlanamadı.", error=str(error), encrypted_request=None,
+                job_id,
+                status="failed",
+                progress=100,
+                message="Özetleme tamamlanamadı.",
+                error=str(error),
+                encrypted_request=None,
             )
         finally:
             heartbeat_stop.set()

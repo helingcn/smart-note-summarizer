@@ -2,12 +2,14 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+
 class SummarizeRequest(BaseModel):
     text: str = Field(max_length=100_000)
     mode: Literal["fast", "verified"] = "fast"
     length: Literal["balanced", "detailed"] = "balanced"
     retain_source: bool = False
     retention_days: Literal[1, 7, 30] = 7
+
 
 class SummarizeResponse(BaseModel):
     summary: str
@@ -47,6 +49,7 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     sources: list[str]
+
 
 class HistoryItem(BaseModel):
     id: int

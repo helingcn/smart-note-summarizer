@@ -2,29 +2,31 @@
 
 from __future__ import annotations
 
-import sqlite3
-import json
 import hashlib
+import json
 import secrets
+import sqlite3
+from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Iterator
 
 from config import DB_PATH
 from security import decrypt_source, encrypt_source
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @contextmanager
 def connection(db_path: Path | None = None) -> Iterator[sqlite3.Connection]:
     path = Path(db_path or DB_PATH)
     path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(path, timeout=10)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA busy_timeout=10000")
+    conn.execute("PRAGMA foreign_keys=ON")
     try:
         yield conn
         conn.commit()
@@ -38,6 +40,7 @@ def _columns(conn: sqlite3.Connection) -> set[str]:
 
 def init_db(db_path: Path | None = None) -> None:
     with connection(db_path) as conn:
+        conn.execute("PRAGMA journal_mode=WAL")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS summaries (
@@ -72,12 +75,9 @@ def init_db(db_path: Path | None = None) -> None:
             """
         )
         conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_jobs_status_created "
-            "ON summary_jobs(status, created_at)"
+            "CREATE INDEX IF NOT EXISTS idx_jobs_status_created ON summary_jobs(status, created_at)"
         )
-        job_columns = {
-            row["name"] for row in conn.execute("PRAGMA table_info(summary_jobs)")
-        }
+        job_columns = {row["name"] for row in conn.execute("PRAGMA table_info(summary_jobs)")}
         if "lease_expires_at" not in job_columns:
             conn.execute("ALTER TABLE summary_jobs ADD COLUMN lease_expires_at TEXT")
         existing = _columns(conn)
@@ -107,9 +107,7 @@ def init_db(db_path: Path | None = None) -> None:
             )
             """
         )
-        user_columns = {
-            row["name"] for row in conn.execute("PRAGMA table_info(users)")
-        }
+        user_columns = {row["name"] for row in conn.execute("PRAGMA table_info(users)")}
         user_additions = {
             "email_verified": "INTEGER NOT NULL DEFAULT 1",
             "role": "TEXT NOT NULL DEFAULT 'user'",
@@ -170,7 +168,6 @@ def migrate_legacy_plaintext_sources(db_path: Path | None = None) -> int:
 def purge_expired_sources(db_path: Path | None = None) -> int:
     now_dt = _utc_now()
     now = now_dt.isoformat()
-    lease_expires = (now_dt + timedelta(minutes=2)).isoformat()
     with connection(db_path) as conn:
         cursor = conn.execute(
             """
@@ -233,9 +230,7 @@ def get_history(
         return [dict(row) for row in rows]
 
 
-def get_summary_source(
-    user_id: str, summary_id: int, db_path: Path | None = None
-) -> str | None:
+def get_summary_source(user_id: str, summary_id: int, db_path: Path | None = None) -> str | None:
     purge_expired_sources(db_path)
     with connection(db_path) as conn:
         row = conn.execute(
@@ -263,8 +258,12 @@ def clear_history(user_id: str, db_path: Path | None = None) -> int:
 
 
 def create_user(
-    email: str, password_hash: str, db_path: Path | None = None,
-    *, email_verified: bool = False, role: str = "user",
+    email: str,
+    password_hash: str,
+    db_path: Path | None = None,
+    *,
+    email_verified: bool = False,
+    role: str = "user",
 ) -> int:
     with connection(db_path) as conn:
         try:
@@ -306,16 +305,17 @@ def create_account_token(
                (user_id, purpose, token_hash, expires_at, created_at)
                VALUES (?, ?, ?, ?, ?)""",
             (
-                user_id, purpose, token_hash,
-                (now + timedelta(minutes=ttl_minutes)).isoformat(), now.isoformat(),
+                user_id,
+                purpose,
+                token_hash,
+                (now + timedelta(minutes=ttl_minutes)).isoformat(),
+                now.isoformat(),
             ),
         )
     return raw_token
 
 
-def consume_account_token(
-    raw_token: str, purpose: str, db_path: Path | None = None
-) -> dict | None:
+def consume_account_token(raw_token: str, purpose: str, db_path: Path | None = None) -> dict | None:
     token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
     now = _utc_now().isoformat()
     with connection(db_path) as conn:
@@ -329,9 +329,7 @@ def consume_account_token(
         ).fetchone()
         if row is None:
             return None
-        conn.execute(
-            "UPDATE account_tokens SET used_at=? WHERE id=?", (now, row["token_id"])
-        )
+        conn.execute("UPDATE account_tokens SET used_at=? WHERE id=?", (now, row["token_id"]))
         return dict(row)
 
 
@@ -382,9 +380,7 @@ def reset_password_with_token(
         return True
 
 
-def update_password(
-    user_id: int, password_hash: str, db_path: Path | None = None
-) -> None:
+def update_password(user_id: int, password_hash: str, db_path: Path | None = None) -> None:
     with connection(db_path) as conn:
         conn.execute(
             """UPDATE users SET password_hash=?, token_version=token_version+1
@@ -395,9 +391,7 @@ def update_password(
 
 def revoke_all_sessions(user_id: int, db_path: Path | None = None) -> None:
     with connection(db_path) as conn:
-        conn.execute(
-            "UPDATE users SET token_version=token_version+1 WHERE id=?", (user_id,)
-        )
+        conn.execute("UPDATE users SET token_version=token_version+1 WHERE id=?", (user_id,))
 
 
 def delete_user_account(user_id: int, email: str, db_path: Path | None = None) -> None:
@@ -430,7 +424,10 @@ def set_user_disabled(user_id: int, disabled: bool, db_path: Path | None = None)
 
 
 def create_job_record(
-    job_id: str, user_id: str, request_payload: str, queue_limit: int,
+    job_id: str,
+    user_id: str,
+    request_payload: str,
+    queue_limit: int,
     db_path: Path | None = None,
 ) -> None:
     now = _utc_now().isoformat()
@@ -505,8 +502,16 @@ def recover_interrupted_jobs(db_path: Path | None = None) -> int:
 
 def update_job_record(job_id: str, db_path: Path | None = None, **values) -> None:
     allowed = {
-        "status", "progress", "message", "summary", "evidence", "error",
-        "cancel_requested", "worker_id", "encrypted_request", "lease_expires_at",
+        "status",
+        "progress",
+        "message",
+        "summary",
+        "evidence",
+        "error",
+        "cancel_requested",
+        "worker_id",
+        "encrypted_request",
+        "lease_expires_at",
     }
     values = {key: value for key, value in values.items() if key in allowed}
     if "evidence" in values and not isinstance(values["evidence"], str):

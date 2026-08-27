@@ -1,6 +1,5 @@
 from summarizer import _best_source, _bm25_scores, _passages, build_summary_evidence
 
-
 DOCUMENT = """[Sayfa 1]
 Şirketin personel sayısı bu yıl 240 kişiye yükseldi.
 

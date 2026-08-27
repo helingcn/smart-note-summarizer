@@ -2,7 +2,6 @@
 
 import streamlit as st
 
-
 DEFAULTS = {
     "access_token": None,
     "user_email": None,

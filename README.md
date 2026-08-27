@@ -171,8 +171,30 @@ Tam OpenAPI şeması `/docs` altında sunulur.
 ## Testler ve değerlendirme
 
 ```bash
-pytest backend/ frontend/ evals/ test_extractor.py -q
+pytest -m "not live_api and not e2e" --cov --cov-report=term-missing
+ruff check backend frontend evals scripts test_extractor.py
+ruff format --check backend frontend evals scripts test_extractor.py
+mypy backend/models.py frontend/summary_utils.py evals/schemas.py evals/metrics.py
+pip-audit -r requirements-backend.txt -r requirements-frontend.txt
 ```
+
+Gerçek Tesseract testi normal test paketinde çalışır; Tesseract yoksa atlanır.
+Gerçek Gemini testi yalnızca açıkça seçilir ve API kullanır:
+
+```bash
+GEMINI_API_KEY=... pytest backend/test_live_integrations.py -m live_api -q
+```
+
+Çalışan frontend'e karşı browser smoke testi:
+
+```bash
+playwright install chromium
+SMARTDIGEST_E2E_URL=http://127.0.0.1:8501 pytest frontend/test_e2e.py -m e2e -q
+```
+
+CI; lint, format, tip kontrolü, en az `%60` coverage, dependency audit, Docker
+build, Trivy container taraması ve Playwright smoke testini zorunlu tutar. Canlı
+Gemini testi maliyet nedeniyle yalnızca manuel workflow çalıştırmasında devreye girer.
 
 Sabit değerlendirme veri seti:
 
@@ -210,4 +232,3 @@ kurallarını okuyun. Güvenlik açıklarını herkese açık issue yerine
 ## Lisans
 
 Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
-

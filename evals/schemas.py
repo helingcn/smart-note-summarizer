@@ -46,7 +46,7 @@ class EvaluationCase:
     candidate: CandidateOutput = field(default_factory=lambda: CandidateOutput(summary=""))
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "EvaluationCase":
+    def from_dict(cls, data: dict[str, Any]) -> EvaluationCase:
         expected = data.get("expected", {})
         candidate = data.get("candidate", {})
         return cls(
@@ -58,15 +58,11 @@ class EvaluationCase:
                 for item in expected.get("facts", [])
             ),
             expected_numbers=tuple(
-                ExpectedNumber(
-                    str(item["value"]), item["context"], item.get("direction")
-                )
+                ExpectedNumber(str(item["value"]), item["context"], item.get("direction"))
                 for item in expected.get("numbers", [])
             ),
             expected_qa=tuple(
-                ExpectedQA(
-                    item["question"], item["answer"], tuple(item.get("source_pages", []))
-                )
+                ExpectedQA(item["question"], item["answer"], tuple(item.get("source_pages", [])))
                 for item in expected.get("qa", [])
             ),
             ocr_reference=expected.get("ocr_reference"),
@@ -86,7 +82,7 @@ class EvaluationDataset:
     cases: tuple[EvaluationCase, ...]
 
     @classmethod
-    def load(cls, path: str | Path) -> "EvaluationDataset":
+    def load(cls, path: str | Path) -> EvaluationDataset:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
         return cls(
             name=data.get("name", Path(path).stem),

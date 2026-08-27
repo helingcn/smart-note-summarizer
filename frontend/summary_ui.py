@@ -6,9 +6,12 @@ import json
 import streamlit as st
 import streamlit.components.v1 as components
 
+
 def render_summary_section(title: str, content: str | list[str], variant: str = "") -> None:
     items = content if isinstance(content, list) else []
-    if (isinstance(content, list) and not items) or (isinstance(content, str) and not content.strip()):
+    if (isinstance(content, list) and not items) or (
+        isinstance(content, str) and not content.strip()
+    ):
         return
     if items:
         body = "<ul>" + "".join(f"<li>{html.escape(item)}</li>" for item in items) + "</ul>"
@@ -54,6 +57,3 @@ def copy_summary_button(summary: str) -> None:
         """,
         height=40,
     )
-
-
-

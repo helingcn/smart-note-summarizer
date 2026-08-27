@@ -41,9 +41,7 @@ def test_verify_password_rejects_garbage_hash():
 def test_account_token_is_single_use(tmp_path):
     db_path = tmp_path / "tokens.db"
     database.init_db(db_path)
-    user_id = database.create_user(
-        "token@example.com", hash_password("test1234"), db_path=db_path
-    )
+    user_id = database.create_user("token@example.com", hash_password("test1234"), db_path=db_path)
     token = database.create_account_token(user_id, "reset_password", 30, db_path)
     assert database.consume_account_token(token, "reset_password", db_path)["id"] == user_id
     assert database.consume_account_token(token, "reset_password", db_path) is None

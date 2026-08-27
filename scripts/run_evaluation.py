@@ -7,7 +7,6 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-
 ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
 if str(ROOT) not in sys.path:
@@ -19,11 +18,14 @@ from evals.schemas import EvaluationDataset  # noqa: E402
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="SmartDigest altın veri değerlendirmesini çalıştırır.")
+    parser = argparse.ArgumentParser(
+        description="SmartDigest altın veri değerlendirmesini çalıştırır."
+    )
     parser.add_argument("dataset", type=Path, help="Değerlendirme JSON dosyası")
     parser.add_argument("--output", type=Path, default=ROOT / "evals" / "reports" / "latest")
     parser.add_argument(
-        "--semantic", action="store_true",
+        "--semantic",
+        action="store_true",
         help="Kararsız iddialarda Gemini embedding + NLI doğrulamasını etkinleştirir.",
     )
     args = parser.parse_args()

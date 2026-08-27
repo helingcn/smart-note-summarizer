@@ -7,7 +7,6 @@ from dataclasses import asdict, dataclass
 
 import pdfplumber
 
-
 MAX_PDF_PAGES = 150
 PDF_TIMEOUT_SECONDS = 90
 
@@ -65,9 +64,7 @@ def _extract_worker(file_path: str, output: mp.Queue) -> None:
         used_ocr = False
         with pdfplumber.open(file_path) as pdf:
             if len(pdf.pages) > MAX_PDF_PAGES:
-                raise PDFValidationError(
-                    f"PDF en fazla {MAX_PDF_PAGES} sayfa olabilir."
-                )
+                raise PDFValidationError(f"PDF en fazla {MAX_PDF_PAGES} sayfa olabilir.")
             for index, page in enumerate(pdf.pages):
                 text = (page.extract_text() or "").strip()
                 method = "text"
@@ -77,9 +74,7 @@ def _extract_worker(file_path: str, output: mp.Queue) -> None:
                         text, method, used_ocr = ocr_text, "ocr", True
                 pages.append(ExtractedPage(index + 1, text, method))
 
-        combined = "\n\n".join(
-            f"[Sayfa {page.page}]\n{page.text}" for page in pages if page.text
-        )
+        combined = "\n\n".join(f"[Sayfa {page.page}]\n{page.text}" for page in pages if page.text)
         output.put(
             {
                 "ok": True,
@@ -101,9 +96,7 @@ def _extract_worker(file_path: str, output: mp.Queue) -> None:
         output.put({"ok": False, "error": message})
 
 
-def extract_pdf(
-    file_path: str, timeout_seconds: int = PDF_TIMEOUT_SECONDS
-) -> ExtractedDocument:
+def extract_pdf(file_path: str, timeout_seconds: int = PDF_TIMEOUT_SECONDS) -> ExtractedDocument:
     if not has_pdf_signature(file_path):
         raise PDFValidationError("Dosyanın içeriği geçerli bir PDF değil.")
 

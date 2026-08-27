@@ -21,7 +21,11 @@ Her pull request öncesinde çalıştırın:
 
 ```bash
 python -m py_compile backend/*.py frontend/*.py
-pytest backend/ frontend/ evals/ test_extractor.py -q
+ruff check backend frontend evals scripts test_extractor.py
+ruff format --check backend frontend evals scripts test_extractor.py
+mypy backend/models.py frontend/summary_utils.py evals/schemas.py evals/metrics.py
+pytest -m "not live_api and not e2e" --cov
+pip-audit -r requirements-backend.txt -r requirements-frontend.txt
 docker compose config --quiet
 ```
 
@@ -59,4 +63,3 @@ Pull request açıklamasında şunlar bulunmalıdır:
 - Çalıştırılan testler
 - UI değiştiyse ekran görüntüsü
 - Bilinen sınırlamalar veya takip işleri
-

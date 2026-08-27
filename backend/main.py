@@ -1,11 +1,6 @@
 import os
 import tempfile
 
-from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile, status
-from google.genai.errors import ClientError
-from pydantic import EmailStr, TypeAdapter, ValidationError
-from starlette.concurrency import run_in_threadpool
-
 from auth import (
     DUMMY_PASSWORD_HASH,
     Principal,
@@ -20,13 +15,26 @@ from auth import (
 )
 from config import ADMIN_EMAILS, APP_ENV, REQUIRE_EMAIL_VERIFICATION, logger
 from database import (
-    clear_history, create_account_token, create_user,
-    delete_summary, delete_user_account, get_history, get_summary_source,
-    get_user_by_email, list_users, revoke_all_sessions,
-    reset_password_with_token, set_user_disabled, update_password, verify_email_token,
+    clear_history,
+    create_account_token,
+    create_user,
+    delete_summary,
+    delete_user_account,
+    get_history,
+    get_summary_source,
+    get_user_by_email,
+    list_users,
+    reset_password_with_token,
+    revoke_all_sessions,
+    set_user_disabled,
+    update_password,
+    verify_email_token,
 )
 from extractor import PDFValidationError, extract_pdf, ocr_available
+from fastapi import Depends, FastAPI, File, HTTPException, Query, Request, UploadFile, status
+from google.genai.errors import ClientError
 from job_manager import QueueFullError, job_manager
+from mailer import send_password_reset_email, send_verification_email, smtp_configured
 from models import (
     AdminUserStatusRequest,
     ChangePasswordRequest,
@@ -45,12 +53,12 @@ from models import (
     TokenResponse,
     VerifyTokenRequest,
 )
-from mailer import send_password_reset_email, send_verification_email, smtp_configured
+from pydantic import EmailStr, TypeAdapter, ValidationError
+from starlette.concurrency import run_in_threadpool
 from summarizer import answer_question
 
 GEMINI_QUOTA_MESSAGE = (
-    "Gemini API günlük/dakikalık kullanım sınırına ulaşıldı. "
-    "Birkaç dakika sonra tekrar deneyin."
+    "Gemini API günlük/dakikalık kullanım sınırına ulaşıldı. Birkaç dakika sonra tekrar deneyin."
 )
 MAX_SUMMARY_INPUT_CHARS = 100_000
 MAX_UPLOAD_BYTES = 20 * 1024 * 1024
@@ -174,8 +182,9 @@ def login(payload: LoginRequest, request: Request):
 @app.post("/auth/verify-email")
 def verify_email(payload: VerifyTokenRequest):
     if not verify_email_token(payload.token):
-        raise HTTPException(status_code=400, detail="Doğrulama bağlantısı geçersiz veya süresi dolmuş.")
-    mark_email_verified(user["id"])
+        raise HTTPException(
+            status_code=400, detail="Doğrulama bağlantısı geçersiz veya süresi dolmuş."
+        )
     return {"status": "verified"}
 
 
@@ -190,7 +199,10 @@ def resend_verification(payload: EmailRequest, request: Request):
         send_verification_email(email, token)
         if APP_ENV != "production" and not smtp_configured():
             development_token = token
-    return {"message": "Hesap uygunsa doğrulama e-postası gönderildi.", "development_token": development_token}
+    return {
+        "message": "Hesap uygunsa doğrulama e-postası gönderildi.",
+        "development_token": development_token,
+    }
 
 
 @app.post("/auth/forgot-password")
@@ -204,13 +216,18 @@ def forgot_password(payload: EmailRequest, request: Request):
         send_password_reset_email(email, token)
         if APP_ENV != "production" and not smtp_configured():
             development_token = token
-    return {"message": "Hesap uygunsa şifre sıfırlama e-postası gönderildi.", "development_token": development_token}
+    return {
+        "message": "Hesap uygunsa şifre sıfırlama e-postası gönderildi.",
+        "development_token": development_token,
+    }
 
 
 @app.post("/auth/reset-password")
 def reset_password(payload: ResetPasswordRequest):
     if not reset_password_with_token(payload.token, hash_password(payload.new_password)):
-        raise HTTPException(status_code=400, detail="Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş.")
+        raise HTTPException(
+            status_code=400, detail="Şifre sıfırlama bağlantısı geçersiz veya süresi dolmuş."
+        )
     return {"status": "password-reset"}
 
 
@@ -259,7 +276,9 @@ def admin_set_user_status(
     principal: Principal = Depends(require_admin),
 ):
     if principal.database_id == user_id and payload.disabled:
-        raise HTTPException(status_code=400, detail="Kendi yönetici hesabınızı devre dışı bırakamazsınız.")
+        raise HTTPException(
+            status_code=400, detail="Kendi yönetici hesabınızı devre dışı bırakamazsınız."
+        )
     if not set_user_disabled(user_id, payload.disabled):
         raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
     return {"status": "updated"}
@@ -354,7 +373,11 @@ def extract(
     filename = file.filename or ""
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Sadece PDF dosyaları desteklenir.")
-    if file.content_type not in {"application/pdf", "application/x-pdf", "application/octet-stream"}:
+    if file.content_type not in {
+        "application/pdf",
+        "application/x-pdf",
+        "application/octet-stream",
+    }:
         raise HTTPException(status_code=400, detail="Dosyanın MIME türü PDF değil.")
 
     with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
@@ -374,7 +397,8 @@ def extract(
             ocr_note = "" if ocr_available() else " OCR için Tesseract bileşeni kurulu değil."
             raise HTTPException(
                 status_code=422,
-                detail="PDF'ten metin çıkarılamadı. Dosya taranmış bir görüntü olabilir." + ocr_note,
+                detail="PDF'ten metin çıkarılamadı. Dosya taranmış bir görüntü olabilir."
+                + ocr_note,
             )
         return {
             "text": document.text,
@@ -431,6 +455,3 @@ def clear_user_history(principal: Principal = Depends(require_principal)):
     deleted = clear_history(principal.user_id)
     logger.info("Kullanıcı geçmişi temizlendi: kullanıcı=%s adet=%s", principal.user_id, deleted)
     return {"status": "cleared", "deleted": deleted}
-    DeleteAccountRequest,
-    EmailRequest,
-    ResetPasswordRequest,

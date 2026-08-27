@@ -112,7 +112,9 @@ def _numbers_in(text: str) -> set[str]:
     return set(NUMBER_PATTERN.findall(text))
 
 
-def _drop_unverified_numbers(overview: str, highlights: list[str], source_text: str) -> tuple[str, list[str]]:
+def _drop_unverified_numbers(
+    overview: str, highlights: list[str], source_text: str
+) -> tuple[str, list[str]]:
     """Kaynakta birebir geçmeyen sayıları maskeler; modelin uydurduğu veya
     bozduğu rakamların (ör. '10,5' yerine '4,25') özete sızmasına karşı
     model boyutundan bağımsız bir güvenlik ağıdır. Maddeyi tamamen atmak
@@ -124,13 +126,16 @@ def _drop_unverified_numbers(overview: str, highlights: list[str], source_text: 
 
     def unverified_numbers(text: str) -> list[str]:
         return [
-            number for number in _numbers_in(text)
+            number
+            for number in _numbers_in(text)
             if len(re.sub(r"[.,]", "", number)) >= 2 and number not in source_numbers
         ]
 
     def sanitize(sentence: str) -> str:
         for number in unverified_numbers(sentence):
-            sentence = re.sub(rf"%?\s?{re.escape(number)}\s?%?", " [doğrulanamayan değer] ", sentence)
+            sentence = re.sub(
+                rf"%?\s?{re.escape(number)}\s?%?", " [doğrulanamayan değer] ", sentence
+            )
         return re.sub(r"\s{2,}", " ", sentence).strip()
 
     sentences = re.split(r"(?<=[.!?])\s+", overview.strip())
@@ -188,7 +193,9 @@ def _drop_incomplete_highlights(highlights: list[str]) -> list[str]:
     return [item for item in highlights if SENTENCE_END.search(item.strip())]
 
 
-def ask_for_summary(prompt: str, max_bullets: int, max_tokens: int, source_text: str, min_words: int = 0) -> str:
+def ask_for_summary(
+    prompt: str, max_bullets: int, max_tokens: int, source_text: str, min_words: int = 0
+) -> str:
     """Özeti JSON olarak alır ve arayüz için tekdüze Markdown'a dönüştürür."""
     schema = {
         "type": "object",
@@ -254,11 +261,16 @@ zorla birbirine bağlamasın; her cümle tek bir ana fikre/kaynağa dayansın.""
             content_lines = [
                 re.sub(r"^[#*\-\s]+|[*]+$", "", line).strip()
                 for line in raw_lines
-                if line.strip() and not re.fullmatch(r"[#*\s]*(Özet|Öne çıkanlar|Ana amaç.*|Sonuçlar|Riskler.*|Gelecek plan.*)[#*\s:]*", line, re.IGNORECASE)
+                if line.strip()
+                and not re.fullmatch(
+                    r"[#*\s]*(Özet|Öne çıkanlar|Ana amaç.*|Sonuçlar|Riskler.*|Gelecek plan.*)[#*\s:]*",
+                    line,
+                    re.IGNORECASE,
+                )
             ]
             if not content_lines:
                 return None
-            return content_lines[0], content_lines[1:max_bullets + 1]
+            return content_lines[0], content_lines[1 : max_bullets + 1]
 
     response = call(prompt, max_tokens)
     if _finish_reason(response) == "MAX_TOKENS":
@@ -301,7 +313,10 @@ kopyalayarak değil."""
 
     output = f"### Özet\n{overview}"
     if highlights:
-        labeled = [item if re.match(r"^\[(Kritik|Önemli|Detay)\]", item) else f"[Önemli] {item}" for item in highlights]
+        labeled = [
+            item if re.match(r"^\[(Kritik|Önemli|Detay)\]", item) else f"[Önemli] {item}"
+            for item in highlights
+        ]
         output += "\n\n### Öne çıkanlar\n" + "\n".join(f"- {item}" for item in labeled)
     return output
 
@@ -347,7 +362,13 @@ def summarize_text(text: str, length: str = "balanced") -> str:
 KAYNAK METİN:
 {text}"""
     min_words, _ = word_target(len(text), length)
-    return ask_for_summary(prompt, bullet_limit(len(text), length), max_output_tokens(len(text), length), text, min_words)
+    return ask_for_summary(
+        prompt,
+        bullet_limit(len(text), length),
+        max_output_tokens(len(text), length),
+        text,
+        min_words,
+    )
 
 
 def split_text(text: str, chunk_size: int = 3500) -> list[str]:
@@ -363,7 +384,7 @@ def split_text(text: str, chunk_size: int = 3500) -> list[str]:
             if current:
                 chunks.append(current)
                 current = ""
-            chunks.extend(sentence[i:i + chunk_size] for i in range(0, len(sentence), chunk_size))
+            chunks.extend(sentence[i : i + chunk_size] for i in range(0, len(sentence), chunk_size))
         else:
             current = f"{current} {sentence}".strip()
 
@@ -391,7 +412,9 @@ METİN PARÇASI:
     )
 
 
-def verify_summary(candidate: str, source: str, max_bullets: int, max_tokens: int, min_words: int = 0) -> str:
+def verify_summary(
+    candidate: str, source: str, max_bullets: int, max_tokens: int, min_words: int = 0
+) -> str:
     """Özetteki iddiaları kaynakla karşılaştırıp hatalı olanları düzeltir."""
     verification_source = source
     if len(source) > 16_000:
@@ -486,7 +509,9 @@ DOĞRULANMIŞ NOTLAR:
     max_tokens = max_output_tokens(len(text), length)
     min_words, _ = word_target(len(text), length)
     _report(on_progress, 60, "Notlar birleştirilip özetleniyor…")
-    candidate = ask_for_summary(prompt, bullet_limit(len(text), length), max_tokens, combined_facts, min_words)
+    candidate = ask_for_summary(
+        prompt, bullet_limit(len(text), length), max_tokens, combined_facts, min_words
+    )
     if not verified:
         _report(on_progress, 80, "Özet tamamlandı, sonuçlar hazırlanıyor…")
         return candidate
@@ -499,10 +524,44 @@ DOĞRULANMIŞ NOTLAR:
 
 
 _STOP_WORDS = {
-    "acaba", "ama", "ancak", "artık", "bir", "biri", "biz", "bu", "buna",
-    "bunu", "da", "daha", "de", "diye", "en", "gibi", "hem", "ile", "ise",
-    "için", "kadar", "ki", "mı", "mi", "mu", "mü", "nasıl", "ne", "neden",
-    "o", "olan", "olarak", "oldu", "şu", "ve", "veya", "ya", "çok",
+    "acaba",
+    "ama",
+    "ancak",
+    "artık",
+    "bir",
+    "biri",
+    "biz",
+    "bu",
+    "buna",
+    "bunu",
+    "da",
+    "daha",
+    "de",
+    "diye",
+    "en",
+    "gibi",
+    "hem",
+    "ile",
+    "ise",
+    "için",
+    "kadar",
+    "ki",
+    "mı",
+    "mi",
+    "mu",
+    "mü",
+    "nasıl",
+    "ne",
+    "neden",
+    "o",
+    "olan",
+    "olarak",
+    "oldu",
+    "şu",
+    "ve",
+    "veya",
+    "ya",
+    "çok",
 }
 _SYNONYMS = {
     "maliyet": {"harcama", "gider", "ücret", "bütçe"},
@@ -535,12 +594,14 @@ def _passages(text: str) -> list[tuple[int, int, str]]:
     if matches:
         for position, match in enumerate(matches):
             end = matches[position + 1].start() if position + 1 < len(matches) else len(text)
-            pages.append((int(match.group(1)), text[match.end():end]))
+            pages.append((int(match.group(1)), text[match.end() : end]))
     else:
         pages = [(1, text)]
     output = []
     for page_no, page_text in pages:
-        chunks = [part.strip() for part in re.split(r"\n\s*\n|(?<=[.!?])\s+", page_text) if part.strip()]
+        chunks = [
+            part.strip() for part in re.split(r"\n\s*\n|(?<=[.!?])\s+", page_text) if part.strip()
+        ]
         output.extend((page_no, index, chunk) for index, chunk in enumerate(chunks, 1))
     return output
 
@@ -562,9 +623,13 @@ def _bm25_scores(query: str, passages: list[tuple[int, int, str]]) -> list[float
         for token in set(expanded):
             if not counts[token]:
                 continue
-            idf = math.log(1 + (len(documents) - frequencies[token] + 0.5) / (frequencies[token] + 0.5))
-            score += idf * (counts[token] * 2.5) / (
-                counts[token] + 1.5 * (0.25 + 0.75 * len(document) / max(avgdl, 1))
+            idf = math.log(
+                1 + (len(documents) - frequencies[token] + 0.5) / (frequencies[token] + 0.5)
+            )
+            score += (
+                idf
+                * (counts[token] * 2.5)
+                / (counts[token] + 1.5 * (0.25 + 0.75 * len(document) / max(avgdl, 1)))
             )
         scores.append(score)
     return scores
@@ -650,7 +715,7 @@ def answer_question(text: str, question: str) -> tuple[str, list[str]]:
     passages = _passages(text)
     scores = _bm25_scores(question, passages)
     ranked = sorted(
-        ((score, item) for score, item in zip(scores, passages) if score > 0),
+        ((score, item) for score, item in zip(scores, passages, strict=False) if score > 0),
         key=lambda pair: pair[0],
         reverse=True,
     )[:4]
@@ -661,8 +726,7 @@ def answer_question(text: str, question: str) -> tuple[str, list[str]]:
         for _, (page, paragraph, chunk) in ranked
     ]
     context = "\n\n".join(
-        f"[Sayfa {page}, paragraf {paragraph}]\n{chunk}"
-        for _, (page, paragraph, chunk) in ranked
+        f"[Sayfa {page}, paragraf {paragraph}]\n{chunk}" for _, (page, paragraph, chunk) in ranked
     )
     answer = ask_model(
         f"""Yalnızca aşağıdaki belge parçalarına dayanarak soruyu Türkçe cevapla.

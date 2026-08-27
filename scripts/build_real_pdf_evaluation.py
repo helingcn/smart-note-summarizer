@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pdfplumber
 
-
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
@@ -16,7 +15,6 @@ if str(ROOT) not in sys.path:
 from backend import config as _config  # noqa: E402,F401 - .env dosyasını yükler
 from backend.extractor import MAX_PDF_PAGES  # noqa: E402
 from backend.summarizer import answer_question, summarize_long_text  # noqa: E402
-
 
 DOCUMENTS = ROOT / "evals" / "documents"
 OUTPUT = ROOT / "evals" / "datasets" / "real_turkish_pdfs.json"
@@ -29,15 +27,35 @@ CASES = (
         "file": "kmu_stratejik_plan.pdf",
         "pages": (6, 9),
         "facts": (
-            ("Üniversite çağdaş ve etik değerleri benimseyen, hukukun üstünlüğüne inanan nitelikli bireyler yetiştirmeyi amaçlar.", (6,)),
-            ("Üniversite bilim, teknoloji, kültür ve sanata katkı sağlamayı özgörev edinmiştir.", (6,)),
-            ("Stratejik plan çalışmaları kurumsallaşma, eğitim-öğretim ve araştırma-geliştirme olmak üzere üç temel eksen üzerine kurulmuştur.", (8,)),
-            ("Kurumsallaşma ekseni etkin ve verimli bir idari yapı ile ulusal ve uluslararası tanınırlığı artırmayı hedefler.", (9,)),
+            (
+                "Üniversite çağdaş ve etik değerleri benimseyen, hukukun üstünlüğüne inanan nitelikli bireyler yetiştirmeyi amaçlar.",
+                (6,),
+            ),
+            (
+                "Üniversite bilim, teknoloji, kültür ve sanata katkı sağlamayı özgörev edinmiştir.",
+                (6,),
+            ),
+            (
+                "Stratejik plan çalışmaları kurumsallaşma, eğitim-öğretim ve araştırma-geliştirme olmak üzere üç temel eksen üzerine kurulmuştur.",
+                (8,),
+            ),
+            (
+                "Kurumsallaşma ekseni etkin ve verimli bir idari yapı ile ulusal ve uluslararası tanınırlığı artırmayı hedefler.",
+                (9,),
+            ),
         ),
         "numbers": (("3", "stratejik plan üç temel eksen üzerine kurulmuştur", None),),
         "qa": (
-            ("Üniversitenin stratejik planı kaç temel eksen üzerine kurulmuştur?", "Üç temel eksen üzerine kurulmuştur.", (8,)),
-            ("Kurumsallaşma ekseninin amacı nedir?", "Etkin ve verimli bir idari yapı kurmak, ulusal ve uluslararası tanınırlığı artırmak ve kurumsal gelişmeyi sağlamaktır.", (9,)),
+            (
+                "Üniversitenin stratejik planı kaç temel eksen üzerine kurulmuştur?",
+                "Üç temel eksen üzerine kurulmuştur.",
+                (8,),
+            ),
+            (
+                "Kurumsallaşma ekseninin amacı nedir?",
+                "Etkin ve verimli bir idari yapı kurmak, ulusal ve uluslararası tanınırlığı artırmak ve kurumsal gelişmeyi sağlamaktır.",
+                (9,),
+            ),
         ),
     },
     {
@@ -46,10 +64,22 @@ CASES = (
         "file": "stratejik_planlama_ders.pdf",
         "pages": (6, 11),
         "facts": (
-            ("Kurum kavramının toplumbilimsel ve kamu örgütlenmesine ilişkin iki anlamı vardır.", (6,)),
-            ("Kuruluş, önceden belirlenmiş sınırlı ve somut bir amaca göre oluşturulan hizmet üreten örgütlü bütünlüktür.", (7,)),
-            ("Stratejik planlama İkinci Dünya Savaşı sonrasında özel sektörde uygulanmaya başlamıştır.", (9,)),
-            ("Alfred Chandler 1962 yılında strateji ile örgütlenme yapısı arasındaki bağlantıyı incelemiştir.", (10,)),
+            (
+                "Kurum kavramının toplumbilimsel ve kamu örgütlenmesine ilişkin iki anlamı vardır.",
+                (6,),
+            ),
+            (
+                "Kuruluş, önceden belirlenmiş sınırlı ve somut bir amaca göre oluşturulan hizmet üreten örgütlü bütünlüktür.",
+                (7,),
+            ),
+            (
+                "Stratejik planlama İkinci Dünya Savaşı sonrasında özel sektörde uygulanmaya başlamıştır.",
+                (9,),
+            ),
+            (
+                "Alfred Chandler 1962 yılında strateji ile örgütlenme yapısı arasındaki bağlantıyı incelemiştir.",
+                (10,),
+            ),
             ("Igor Ansoff Corporate Strategy çalışmasını 1965 yılında yayımlamıştır.", (10,)),
         ),
         "numbers": (
@@ -58,8 +88,16 @@ CASES = (
             ("1965", "Igor Ansoff Corporate Strategy", None),
         ),
         "qa": (
-            ("Kurum kavramının kaç anlamı vardır?", "İki anlamı vardır: toplumbilimsel anlam ve kamu örgütlenmesine ilişkin anlam.", (6,)),
-            ("Kuruluş ile kurum arasındaki temel fark nedir?", "Kuruluş yerel, somut ve sınırlı bir hizmete odaklanırken kurum daha geniş politika izler ve ülke veya bölge çapında yaygındır.", (7, 8)),
+            (
+                "Kurum kavramının kaç anlamı vardır?",
+                "İki anlamı vardır: toplumbilimsel anlam ve kamu örgütlenmesine ilişkin anlam.",
+                (6,),
+            ),
+            (
+                "Kuruluş ile kurum arasındaki temel fark nedir?",
+                "Kuruluş yerel, somut ve sınırlı bir hizmete odaklanırken kurum daha geniş politika izler ve ülke veya bölge çapında yaygındır.",
+                (7, 8),
+            ),
         ),
     },
     {
@@ -68,7 +106,10 @@ CASES = (
         "file": "tubitak_2025_faaliyet.pdf",
         "pages": (9, 9),
         "facts": (
-            ("Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi yıl boyunca 12 milyon indirmeye ulaşmıştır.", (9,)),
+            (
+                "Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi yıl boyunca 12 milyon indirmeye ulaşmıştır.",
+                (9,),
+            ),
             ("Bilim Genç platformu 45,5 milyon görüntülenmeye ulaşmıştır.", (9,)),
         ),
         "numbers": (
@@ -76,8 +117,16 @@ CASES = (
             ("45,5", "Bilim Genç platformu milyon görüntülenme", None),
         ),
         "qa": (
-            ("Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi kaç indirmeye ulaşmıştır?", "12 milyon indirmeye ulaşmıştır.", (9,)),
-            ("Bilim Genç platformu kaç görüntülenmeye ulaşmıştır?", "45,5 milyon görüntülenmeye ulaşmıştır.", (9,)),
+            (
+                "Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi kaç indirmeye ulaşmıştır?",
+                "12 milyon indirmeye ulaşmıştır.",
+                (9,),
+            ),
+            (
+                "Bilim Genç platformu kaç görüntülenmeye ulaşmıştır?",
+                "45,5 milyon görüntülenmeye ulaşmıştır.",
+                (9,),
+            ),
         ),
         "expect_page_limit_rejection": True,
     },
@@ -153,9 +202,15 @@ def main() -> int:
                     "evaluated_pages": list(range(spec["pages"][0], spec["pages"][1] + 1)),
                 },
                 "expected": {
-                    "facts": [{"text": fact, "source_pages": list(pages)} for fact, pages in spec["facts"]],
+                    "facts": [
+                        {"text": fact, "source_pages": list(pages)} for fact, pages in spec["facts"]
+                    ],
                     "numbers": [
-                        {"value": value, "context": context, **({"direction": direction} if direction else {})}
+                        {
+                            "value": value,
+                            "context": context,
+                            **({"direction": direction} if direction else {}),
+                        }
                         for value, context, direction in spec["numbers"]
                     ],
                     "qa": [

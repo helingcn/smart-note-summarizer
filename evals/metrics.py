@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from dataclasses import asdict
 from difflib import SequenceMatcher
 from statistics import mean
 from typing import Any
@@ -9,7 +8,6 @@ from typing import Any
 from backend.summarizer import _best_source, _tokens
 
 from .schemas import EvaluationCase, EvaluationDataset
-
 
 _UP = {"arttı", "artış", "artarak", "yükseldi", "yükseliş", "büyüdü"}
 _DOWN = {"azaldı", "azalış", "azalarak", "düştü", "düşüş", "geriledi"}
@@ -65,11 +63,18 @@ def _parse_number(raw: str, magnitude: str | None = None) -> float:
 
 def _number_mentions(text: str) -> list[tuple[float, str, str | None]]:
     mentions = [
-        (_parse_number(match.group("number"), match.group("magnitude")), match.group(0), match.group("magnitude"))
+        (
+            _parse_number(match.group("number"), match.group("magnitude")),
+            match.group(0),
+            match.group("magnitude"),
+        )
         for match in _NUMBER_RE.finditer(text)
     ]
     for word, value in _NUMBER_WORDS.items():
-        mentions.extend((float(value), match.group(0), None) for match in re.finditer(rf"\b{word}\b", text.lower()))
+        mentions.extend(
+            (float(value), match.group(0), None)
+            for match in re.finditer(rf"\b{word}\b", text.lower())
+        )
     mentions.extend(
         (2.0, match.group(0), None)
         for match in re.finditer(r"\bII\.?\s+Dünya\s+Savaşı", text, flags=re.IGNORECASE)
@@ -110,13 +115,15 @@ def _claim_has_kind(claim: str, kind: str) -> bool:
     if kind == "percentage":
         return "%" in lowered or bool(re.search(r"\b(?:yüzde|oran)\b", lowered))
     if kind == "currency":
-        return any(symbol in lowered for symbol in ("₺", "$", "€")) or bool(re.search(
-            r"\b(?:tl|try|dolar|usd|euro|eur)\b", lowered
-        ))
+        return any(symbol in lowered for symbol in ("₺", "$", "€")) or bool(
+            re.search(r"\b(?:tl|try|dolar|usd|euro|eur)\b", lowered)
+        )
     return True
 
 
-def _numeric_claim_result(summary: str, value: str, context: str, direction: str | None) -> dict[str, Any]:
+def _numeric_claim_result(
+    summary: str, value: str, context: str, direction: str | None
+) -> dict[str, Any]:
     """Sayıyı değer, tür, bağlam ve yönüyle denetleyip açıklanabilir sonuç döndürür."""
     expected = _expected_numeric_value(value, context)
     kind = _number_kind(expected, value, context)
@@ -132,18 +139,29 @@ def _numeric_claim_result(summary: str, value: str, context: str, direction: str
         if not _direction_present(claim.lower(), direction):
             continue
         return {
-            "matched": True, "value": value, "normalized_value": expected,
-            "kind": kind, "context": context, "direction": direction,
-            "matched_claim": claim, "reason": "Değer, tür, bağlam ve yön aynı iddiada eşleşti.",
+            "matched": True,
+            "value": value,
+            "normalized_value": expected,
+            "kind": kind,
+            "context": context,
+            "direction": direction,
+            "matched_claim": claim,
+            "reason": "Değer, tür, bağlam ve yön aynı iddiada eşleşti.",
         }
     reason = (
-        "Beklenen değer özette bulunamadı." if not value_claims
+        "Beklenen değer özette bulunamadı."
+        if not value_claims
         else "Değer bulundu ancak tür, bağlam veya yön aynı iddiada eşleşmedi."
     )
     return {
-        "matched": False, "value": value, "normalized_value": expected,
-        "kind": kind, "context": context, "direction": direction,
-        "candidate_claims": value_claims, "reason": reason,
+        "matched": False,
+        "value": value,
+        "normalized_value": expected,
+        "kind": kind,
+        "context": context,
+        "direction": direction,
+        "candidate_claims": value_claims,
+        "reason": reason,
     }
 
 
@@ -188,7 +206,7 @@ def _local_negation_mismatch(claim: str, evidence: str) -> bool:
         for index, token in enumerate(tokens):
             if token not in _NEGATIONS:
                 continue
-            result.update(item for item in tokens[max(0, index - 2):index + 3] if item in shared)
+            result.update(item for item in tokens[max(0, index - 2) : index + 3] if item in shared)
         return result
 
     return bool(negated_shared(claim_tokens) ^ negated_shared(evidence_tokens))
@@ -236,13 +254,21 @@ def _claim_support(claim: str, source_text: str, semantic: bool = False) -> dict
         source = _fallback_source(claim, source_text)
         used_fallback = source is not None
     if source is None:
-        return {"claim": claim, "status": "source_not_found", "reason": "İlgili kaynak parçası bulunamadı."}
+        return {
+            "claim": claim,
+            "status": "source_not_found",
+            "reason": "İlgili kaynak parçası bulunamadı.",
+        }
 
     page, paragraph, evidence, lexical_score = source
     claim_numbers = {value for value, _, _ in _number_mentions(claim)}
     source_without_page_markers = re.sub(r"\[Sayfa\s+\d+\]", "", source_text, flags=re.IGNORECASE)
     document_numbers = {value for value, _, _ in _number_mentions(source_without_page_markers)}
-    missing_numbers = sorted(value for value in claim_numbers if not any(_same_number(value, item) for item in document_numbers))
+    missing_numbers = sorted(
+        value
+        for value in claim_numbers
+        if not any(_same_number(value, item) for item in document_numbers)
+    )
     claim_direction, evidence_direction = _direction(claim), _direction(evidence)
 
     status, reason = "supported", "Kaynakla yeterli sözcük ve olgu eşleşmesi var."
@@ -253,7 +279,10 @@ def _claim_support(claim: str, source_text: str, semantic: bool = False) -> dict
     elif lexical_score >= 35 and _local_negation_mismatch(claim, evidence):
         status, reason = "contradicted", "Olumlu/olumsuz anlam kaynakla ters."
     elif used_fallback or lexical_score < 35:
-        status, reason = "uncertain", "Kaynak adayı ilgili ancak destek düzeyi karar vermek için düşük."
+        status, reason = (
+            "uncertain",
+            "Kaynak adayı ilgili ancak destek düzeyi karar vermek için düşük.",
+        )
 
     result = {
         "claim": claim,
@@ -296,7 +325,7 @@ def _summary_claims(summary: str) -> list[str]:
         if len(line) < 12 or line.startswith("#"):
             continue
         # "2. Dünya Savaşı" ve benzeri sıra/yıl ifadelerini cümle sınırı sanma.
-        parts = re.split(r"(?<!\d\.)(?<=[.!?])\s+(?=[A-ZÇĞİÖŞÜ\[])" , line)
+        parts = re.split(r"(?<!\d\.)(?<=[.!?])\s+(?=[A-ZÇĞİÖŞÜ\[])", line)
         claims.extend(part.strip() for part in parts if len(part.strip()) >= 12)
     return claims
 
@@ -315,7 +344,9 @@ def _word_error_rate(reference: str, hypothesis: str) -> float:
     return min(1.0, (max(len(ref), len(hyp)) - matches) / len(ref))
 
 
-def evaluate_case(case: EvaluationCase, fact_threshold: float = 0.55, semantic: bool = False) -> dict[str, Any]:
+def evaluate_case(
+    case: EvaluationCase, fact_threshold: float = 0.55, semantic: bool = False
+) -> dict[str, Any]:
     summary = case.candidate.summary
     fact_scores = [
         max((_ratio(fact.text, claim) for claim in _summary_claims(summary)), default=0.0)
@@ -344,7 +375,8 @@ def evaluate_case(case: EvaluationCase, fact_threshold: float = 0.55, semantic: 
         qa_answer_scores.append(_ratio(expected.answer, actual.get("answer", "")))
         if expected.source_pages:
             pages = {
-                page for source in actual.get("sources", [])
+                page
+                for source in actual.get("sources", [])
                 if (page := _page_from_source(str(source))) is not None
             }
             qa_source_hits.append(bool(pages & set(expected.source_pages)))
@@ -361,14 +393,23 @@ def evaluate_case(case: EvaluationCase, fact_threshold: float = 0.55, semantic: 
         "numeric_accuracy": mean(number_results) if number_results else None,
         "numeric_details": numeric_details,
         "supported_claim_rate": status_counts["supported"] / claim_count if claim_count else None,
-        "contradicted_claim_rate": status_counts["contradicted"] / claim_count if claim_count else None,
-        "source_not_found_rate": status_counts["source_not_found"] / claim_count if claim_count else None,
+        "contradicted_claim_rate": status_counts["contradicted"] / claim_count
+        if claim_count
+        else None,
+        "source_not_found_rate": status_counts["source_not_found"] / claim_count
+        if claim_count
+        else None,
         "uncertain_claim_rate": status_counts["uncertain"] / claim_count if claim_count else None,
         "unsupported_claim_rate": (
             status_counts["contradicted"] + status_counts["source_not_found"]
-        ) / claim_count if claim_count else None,
+        )
+        / claim_count
+        if claim_count
+        else None,
         "claim_support": claim_support,
-        "qa_answer_coverage": mean(score >= fact_threshold for score in qa_answer_scores) if qa_answer_scores else None,
+        "qa_answer_coverage": mean(score >= fact_threshold for score in qa_answer_scores)
+        if qa_answer_scores
+        else None,
         "qa_source_page_hit_rate": mean(qa_source_hits) if qa_source_hits else None,
         "ocr_word_error_rate": ocr_wer,
         "latency_seconds": case.candidate.latency_seconds,
@@ -383,10 +424,16 @@ def _average(results: list[dict[str, Any]], key: str) -> float | None:
 def evaluate_dataset(dataset: EvaluationDataset, semantic: bool = False) -> dict[str, Any]:
     cases = [evaluate_case(case, semantic=semantic) for case in dataset.cases]
     keys = (
-        "fact_coverage", "numeric_accuracy", "supported_claim_rate",
-        "contradicted_claim_rate", "source_not_found_rate", "uncertain_claim_rate",
+        "fact_coverage",
+        "numeric_accuracy",
+        "supported_claim_rate",
+        "contradicted_claim_rate",
+        "source_not_found_rate",
+        "uncertain_claim_rate",
         "unsupported_claim_rate",
-        "qa_answer_coverage", "qa_source_page_hit_rate", "ocr_word_error_rate",
+        "qa_answer_coverage",
+        "qa_source_page_hit_rate",
+        "ocr_word_error_rate",
         "latency_seconds",
     )
     return {

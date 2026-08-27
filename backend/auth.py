@@ -5,17 +5,22 @@ import threading
 import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
+from datetime import UTC, datetime, timedelta
 
 import jwt
-from fastapi import Depends, Header, HTTPException, Request, status
-
 from config import (
-    APP_ENV, AUTH_IP_LIMIT_PER_5_MINUTES, BASE_DIR, GLOBAL_IP_LIMIT_PER_MINUTE,
-    JWT_SECRET_PATH, RATE_LIMIT_PER_MINUTE, REDIS_URL, REQUIRE_EMAIL_VERIFICATION,
+    APP_ENV,
+    AUTH_IP_LIMIT_PER_5_MINUTES,
+    BASE_DIR,
+    GLOBAL_IP_LIMIT_PER_MINUTE,
+    JWT_SECRET_PATH,
+    RATE_LIMIT_PER_MINUTE,
+    REDIS_URL,
+    REQUIRE_EMAIL_VERIFICATION,
     TRUST_PROXY_HEADERS,
 )
+from fastapi import Depends, Header, HTTPException, Request, status
+
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRES_HOURS = 24 * 7
 PBKDF2_ITERATIONS = 210_000
@@ -98,13 +103,14 @@ def verify_password(password: str, stored_hash: str) -> bool:
 DUMMY_PASSWORD_HASH = hash_password("smartdigest-dummy-password-for-timing-safety")
 
 
-def create_access_token(
-    email: str, token_version: int = 0, role: str = "user"
-) -> str:
-    now = datetime.now(timezone.utc)
+def create_access_token(email: str, token_version: int = 0, role: str = "user") -> str:
+    now = datetime.now(UTC)
     payload = {
-        "sub": email, "ver": token_version, "role": role,
-        "iat": now, "exp": now + timedelta(hours=JWT_EXPIRES_HOURS),
+        "sub": email,
+        "ver": token_version,
+        "role": role,
+        "iat": now,
+        "exp": now + timedelta(hours=JWT_EXPIRES_HOURS),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -119,10 +125,13 @@ def require_principal(authorization: str | None = Header(default=None)) -> Princ
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Oturum süresi doldu, tekrar giriş yapın."
-        )
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Oturum süresi doldu, tekrar giriş yapın.",
+        ) from None
     except jwt.InvalidTokenError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Geçersiz oturum.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Geçersiz oturum."
+        ) from None
     email = payload.get("sub")
     if not email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Geçersiz oturum.")
@@ -135,9 +144,7 @@ def require_principal(authorization: str | None = Header(default=None)) -> Princ
         raise HTTPException(status_code=403, detail="E-posta adresinizi doğrulamanız gerekiyor.")
     if int(payload.get("ver", -1)) != int(user["token_version"]):
         raise HTTPException(status_code=401, detail="Oturum geçersiz kılındı.")
-    return Principal(
-        user_id=email, database_id=int(user["id"]), role=str(user["role"])
-    )
+    return Principal(user_id=email, database_id=int(user["id"]), role=str(user["role"]))
 
 
 def require_admin(principal: Principal = Depends(require_principal)) -> Principal:
@@ -203,7 +210,9 @@ class DistributedRateLimiter:
                 self._redis.ping()
             except Exception as error:
                 if APP_ENV == "production":
-                    raise RuntimeError("Production ortamında Redis bağlantısı zorunludur.") from error
+                    raise RuntimeError(
+                        "Production ortamında Redis bağlantısı zorunludur."
+                    ) from error
 
     def check_key(self, key: str, limit: int, window_seconds: int) -> None:
         if self._redis is not None:
@@ -234,9 +243,7 @@ class DistributedRateLimiter:
             timestamps.append(now)
 
     def check_global_ip(self, request: Request) -> None:
-        self.check_key(
-            f"global-ip:{client_ip(request)}", GLOBAL_IP_LIMIT_PER_MINUTE, 60
-        )
+        self.check_key(f"global-ip:{client_ip(request)}", GLOBAL_IP_LIMIT_PER_MINUTE, 60)
 
     def check_auth(self, request: Request, account: str, scope: str) -> None:
         ip = client_ip(request)

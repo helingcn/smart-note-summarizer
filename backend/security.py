@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
 
-from cryptography.fernet import Fernet, InvalidToken
-
 from config import BASE_DIR, FERNET_KEY_PATH
+from cryptography.fernet import Fernet, InvalidToken
 
 
 def _load_or_create_key(key_path: Path = FERNET_KEY_PATH) -> bytes:
