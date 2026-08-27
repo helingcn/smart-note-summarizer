@@ -7,6 +7,8 @@ __pycache__/
 # Environment / secrets
 .env
 *.env.local
+.smartdigest.key
+.smartdigest.jwt_secret
 
 # OS
 .DS_Store
@@ -20,6 +22,9 @@ __pycache__/
 
 # Database
 *.db
+
+# Generated evaluation reports
+evals/reports/
 
 # Claude
 .claude/
