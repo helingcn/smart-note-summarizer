@@ -25,7 +25,7 @@ def render_summary_section(title: str, content: str | list[str], variant: str = 
 
 
 def copy_summary_button(summary: str) -> None:
-    """Tarayıcı panosuna kopyalayan, metinsiz küçük bir düğme gösterir."""
+    """Özeti tarayıcı panosuna kopyalayan anlaşılır bir düğme gösterir."""
     safe_summary = json.dumps(summary).replace("<", "\\u003c")
     components.html(
         f"""
@@ -35,7 +35,7 @@ def copy_summary_button(summary: str) -> None:
                    background:#111116; color:#f5f5f7; cursor:pointer; font-size:16px; }}
           button:hover {{ background:#17171f; border-color:#34d399; }}
         </style>
-        <button id="copy" title="Özeti kopyala" aria-label="Özeti kopyala">⧉</button>
+        <button id="copy" title="Özeti kopyala" aria-label="Özeti kopyala">Kopyala</button>
         <script>
           const summary = {safe_summary};
           const button = document.getElementById('copy');
@@ -50,8 +50,8 @@ def copy_summary_button(summary: str) -> None:
               document.execCommand('copy');
               area.remove();
             }}
-            button.textContent = '✓';
-            setTimeout(() => button.textContent = '⧉', 1500);
+            button.textContent = 'Kopyalandı';
+            setTimeout(() => button.textContent = 'Kopyala', 1500);
           }});
         </script>
         """,

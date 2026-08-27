@@ -10,8 +10,7 @@ from summary_utils import error_detail
 
 
 def render_account(api_url: str, auth_headers: Callable[[], dict], local_storage: Any) -> None:
-    st.markdown("### Hesap güvenliği")
-    st.caption(st.session_state.user_email)
+    st.markdown("#### Şifre ve güvenlik")
 
     with st.form("change_password_form"):
         current_password = st.text_input("Mevcut şifre", type="password")
@@ -45,7 +44,12 @@ def render_account(api_url: str, auth_headers: Callable[[], dict], local_storage
         except requests.exceptions.RequestException as error:
             st.error(f"Oturumlar kapatılamadı: {error_detail(error)}")
 
+    st.divider()
+    st.markdown("#### Veri ve hesap")
     with st.expander("Hesabı kalıcı olarak sil", expanded=False):
+        st.warning(
+            "Bu işlem hesabınızı, özetlerinizi ve saklanan kaynaklarınızı geri alınamaz biçimde siler."
+        )
         with st.form("delete_account_form"):
             delete_password = st.text_input("Onay için şifreniz", type="password")
             delete_confirm = st.checkbox("Hesabımın ve tüm verilerimin silinmesini onaylıyorum")

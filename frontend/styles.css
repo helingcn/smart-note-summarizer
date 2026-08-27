@@ -1,7 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 :root {
   --bg:#08080d; --surface:rgba(255,255,255,.04); --surface-solid:#111116; --surface-alt:rgba(255,255,255,.03);
-  --text:#f5f5f7; --text-secondary:#a4a4b2; --text-tertiary:#75758a;
+  --text:#f5f5f7; --text-secondary:#b8b8c5; --text-tertiary:#9292a5;
   --border:rgba(255,255,255,.09); --border-strong:rgba(255,255,255,.16);
   --accent-1:#10b981; --accent-2:#059669; --accent-solid:#34d399; --accent-glow:rgba(16,185,129,.45);
   --accent-soft:rgba(16,185,129,.14); --accent-soft-text:#86efac;
@@ -26,9 +26,12 @@ html, body, [class*="css"], p, div, span, label, button, input, textarea {
 [data-testid="stToolbar"] { display:none !important; }
 .stDeployButton, [data-testid="stDeployButton"] { display:none !important; }
 #MainMenu { visibility:hidden !important; }
-.block-container { max-width:840px; padding-top:2.6rem; padding-bottom:4.5rem; }
+.block-container { max-width:900px; padding-top:2.4rem; padding-bottom:4.5rem; }
 .sd-name { font-size:1.05rem; font-weight:700; margin:0; letter-spacing:-.01em; color:var(--text); }
-.sd-privacy { color:var(--text-tertiary); font-size:.78rem; margin:14px 0 0; }
+.sd-product-header { max-width:720px; margin-bottom:1rem; }
+.sd-page-title { color:var(--text); font-size:2rem; line-height:1.15; letter-spacing:-.035em; margin:.75rem 0 .65rem; }
+.sd-page-subtitle { color:var(--text-secondary); font-size:1rem; line-height:1.6; margin:0; max-width:680px; }
+.sd-privacy { color:var(--text-tertiary); font-size:.78rem; margin:12px 0 0; }
 [data-testid="stTabs"] button { font-weight:600; font-size:.92rem; color:var(--text-tertiary); }
 [data-testid="stTabs"] button[aria-selected="true"] { color:var(--text); }
 [data-testid="stTabs"] [data-baseweb="tab-highlight"] { background-color:var(--accent-solid) !important;
@@ -82,6 +85,9 @@ html, body, [class*="css"], p, div, span, label, button, input, textarea {
 [data-testid="stBaseButton-primary"]:hover, [data-testid="stBaseButton-primaryFormSubmit"]:hover {
   box-shadow:0 6px 22px -4px var(--accent-glow); transform:translateY(-1px); }
 [data-testid="stBaseButton-primary"]:disabled, [data-testid="stBaseButton-primaryFormSubmit"]:disabled { opacity:.4 !important; cursor:not-allowed; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, [role="tab"]:focus-visible {
+  outline:3px solid rgba(52,211,153,.55) !important; outline-offset:2px !important; }
+[data-testid="stPopoverBody"] { min-width:min(440px, calc(100vw - 32px)); }
 [data-testid="stProgressBarTrack"] { background:rgba(255,255,255,.08) !important; border-radius:99px; }
 [data-testid="stProgressBarTrack"] > div { background-image:linear-gradient(90deg, var(--accent-1), var(--accent-2)) !important; background-color:transparent !important; }
 [data-testid="stProgress"] [role="progressbar"] > div {
@@ -122,12 +128,21 @@ html, body, [class*="css"], p, div, span, label, button, input, textarea {
 .sd-detail-body { font-size:.86rem; line-height:1.58; color:var(--text-secondary); margin:0; }
 .sd-detail-body ul { margin:.2rem 0 0; padding-left:1.1rem; }
 .sd-detail-body li { margin:.35rem 0; }
-.sd-history-item { padding:1.05rem 0; border-bottom:1px solid var(--border); }
+.sd-history-item { padding:.2rem 0 .8rem; }
 .sd-history-date { font-size:.72rem; color:var(--text-tertiary); margin:0 0 5px; }
 .sd-history-summary { font-size:.9rem; line-height:1.5; color:var(--text); margin:0 0 5px; }
 .sd-history-meta { font-size:.72rem; color:var(--text-tertiary); margin:0; }
+[data-testid="stVerticalBlock"]:has(.sd-history-card) {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:1rem 1.1rem; margin:.8rem 0; box-shadow:0 10px 30px -22px rgba(0,0,0,.8); }
 @media (max-width:720px) {
-  .block-container { padding-top:1.6rem; }
+  .block-container { padding:1.25rem 1rem 3rem; }
+  .sd-page-title { font-size:1.55rem; }
+  .sd-page-subtitle { font-size:.9rem; }
   .sd-summary-card { padding:1.3rem 1.2rem; }
   .sd-facts { flex-direction:column; }
+  [data-testid="stHorizontalBlock"] { flex-wrap:wrap; gap:.6rem; }
+  [data-testid="column"] { min-width:100% !important; width:100% !important; flex:1 1 100% !important; }
+  [data-testid="stButton"] button, [data-testid="stDownloadButton"] button { width:100%; }
+  [data-testid="stTabs"] button { padding-left:.7rem; padding-right:.7rem; }
 }

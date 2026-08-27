@@ -199,24 +199,31 @@ def extract_pdf_text(file_bytes: bytes, file_name: str) -> dict:
     return response.json()
 
 
-header_left, header_right = st.columns([5, 1.4])
-with header_left:
-    st.markdown(
-        """
-    <p class="sd-name">SmartDigest</p>
-    <p class="sd-privacy">Özetleme için metinler Gemini API'ye (Google) gönderilir.</p>
+st.markdown(
+    """
+    <div class="sd-product-header">
+      <p class="sd-name">SmartDigest</p>
+      <h1 class="sd-page-title">Belge Özetleme ve Kaynak Analizi</h1>
+      <p class="sd-page-subtitle">PDF belgelerini veya metinleri özetleyin; önemli bulguları,
+      sayıları ve kaynak eşleşmelerini tek yerde inceleyin.</p>
+      <p class="sd-privacy">Belge içeriği özetleme sırasında Google Gemini API'ye gönderilir.</p>
+    </div>
     """,
-        unsafe_allow_html=True,
-    )
-with header_right:
-    st.caption(st.session_state.user_email)
-    if st.button("Çıkış yap", use_container_width=True):
-        st.session_state.access_token = None
-        st.session_state.user_email = None
-        st.session_state.user_role = "user"
-        local_storage.deleteItem("smartdigest_token")
-        time.sleep(0.3)
-        st.rerun()
+    unsafe_allow_html=True,
+)
+
+header_space, header_account = st.columns([5, 1.2])
+with header_account:
+    with st.popover("Hesap", use_container_width=True):
+        st.caption(st.session_state.user_email)
+        render_account(API_URL, auth_headers, local_storage)
+        if st.button("Bu cihazdan çıkış yap", use_container_width=True):
+            st.session_state.access_token = None
+            st.session_state.user_email = None
+            st.session_state.user_role = "user"
+            local_storage.deleteItem("smartdigest_token")
+            time.sleep(0.3)
+            st.rerun()
 
 try:
     response = requests.get(f"{API_URL}/history", headers=auth_headers(), timeout=4)
@@ -226,12 +233,13 @@ except requests.exceptions.RequestException:
     history_data = []
     st.warning("Geçmişe şu an ulaşılamıyor. Backend sunucusunun çalıştığını kontrol edin.")
 
-tab1, tab2, tab3 = st.tabs(["Yeni özet", "Geçmiş", "Hesap"])
+tab1, tab2 = st.tabs(["Yeni özet", "Geçmiş"])
 
 with tab1:
     with st.container(border=True):
         st.markdown(
-            '<p class="sd-panel-title">İçeriğini ekle</p><p class="sd-panel-copy">Bir PDF yükle veya özetlemek istediğin metni yapıştır.</p>',
+            '<p class="sd-panel-title">Belgenizi ekleyin</p>'
+            '<p class="sd-panel-copy">Özetlemeye başlamak için bir PDF seçin veya metin yapıştırın.</p>',
             unsafe_allow_html=True,
         )
         choice = st.segmented_control(
@@ -242,49 +250,6 @@ with tab1:
             label_visibility="collapsed",
         )
 
-        st.markdown('<p class="sd-field-label">Özet modu</p>', unsafe_allow_html=True)
-        mode = st.segmented_control(
-            "Özet modu",
-            ["fast", "verified"],
-            format_func=lambda value: "Hızlı" if value == "fast" else "Kaynak kontrollü",
-            default="fast",
-            required=True,
-            label_visibility="collapsed",
-            help="Hızlı mod tek işlemde özetler. Kaynak kontrollü mod ikinci geçiş yapar ve maddelere sayfa/destek bilgisi ekler; destek puanı kelime örtüşmesine dayanır, insan doğrulaması veya anlamsal doğrulama değildir.",
-        )
-        st.caption(
-            "Hızlı: daha kısa bekleme · Kaynak kontrollü: sayfa kaynağı ve kelime örtüşmesi puanıyla ikinci geçiş"
-        )
-
-        st.markdown('<p class="sd-field-label">Özet uzunluğu</p>', unsafe_allow_html=True)
-        length = st.segmented_control(
-            "Özet uzunluğu",
-            ["balanced", "detailed"],
-            format_func=lambda value: {"balanced": "Dengeli", "detailed": "Detaylı"}[value],
-            default="balanced",
-            required=True,
-            label_visibility="collapsed",
-        )
-
-        retain_source = st.checkbox(
-            "Kaynak belgeyi geçmişte şifreli sakla",
-            value=False,
-            help="Kapalıyken yalnızca özet saklanır. Açıkken kaynak metin seçilen süre sonunda otomatik silinir.",
-        )
-        st.caption(
-            "Belge içeriği özetleme ve belgeyle sohbet sırasında Gemini API'ye "
-            "gönderilir. Kaynak saklama kapalıysa işlem tamamlandıktan sonra geçmişe kaydedilmez."
-        )
-        retention_days = 7
-        if retain_source:
-            retention_days = st.selectbox(
-                "Kaynağı otomatik sil",
-                [1, 7, 30],
-                index=1,
-                format_func=lambda days: f"{days} gün sonra",
-            )
-
-        st.markdown('<p class="sd-field-label">İçerik</p>', unsafe_allow_html=True)
         text = None
         if choice == "PDF yükle":
             uploaded_file = st.file_uploader(
@@ -295,63 +260,66 @@ with tab1:
                     extracted = extract_pdf_text(uploaded_file.getvalue(), uploaded_file.name)
                     text = extracted["text"]
                     method = " · OCR kullanıldı" if extracted.get("ocr_used") else ""
-                    st.caption(
-                        f"✓ {uploaded_file.name} · {extracted.get('page_count', '?')} sayfa · "
+                    st.success(
+                        f"{uploaded_file.name} · {extracted.get('page_count', '?')} sayfa · "
                         f"{len(text):,} karakter okundu{method}"
                     )
                 except requests.exceptions.RequestException as error:
                     st.error(f"PDF işlenemedi: {error_detail(error)}")
-            submitted = st.button("Özeti oluştur", type="primary", use_container_width=True)
         else:
-            # Form içindeki text_area'da Streamlit yalnızca Ctrl/Cmd+Enter'ı forma
-            # gönderme (submit) tetikleyicisi sayar; düz Enter satır başı yapar. Aşağıdaki
-            # script, Shift'siz düz Enter'ı yakalayıp satır eklemeden Ctrl/Cmd+Enter'a
-            # dönüştürür; böylece Streamlit'in kendi doğrulanmış gönderim akışı çalışır.
-            with st.form("paste_text_form", border=False):
-                text = st.text_area(
-                    "Özetlenecek metin",
-                    height=220,
-                    placeholder="Metnini buraya yapıştır…",
-                    label_visibility="collapsed",
-                    key="paste_text",
-                )
-                st.caption(f"En fazla {MAX_SUMMARY_INPUT_CHARS:,} karakter kabul edilir.")
-                submitted = st.form_submit_button(
-                    "Özeti oluştur", type="primary", use_container_width=True
-                )
-                components.html(
-                    """
-                    <script>
-                      (function() {
-                        const doc = window.parent.document;
-                        if (doc._smartdigestEnterHandler) {
-                          doc.removeEventListener('keydown', doc._smartdigestEnterHandler);
-                        }
-                        const handler = function(e) {
-                          if (e.key !== 'Enter' || e.shiftKey || e.ctrlKey || e.metaKey) return;
-                          const target = e.target;
-                          if (!target || target.tagName !== 'TEXTAREA') return;
-                          if (target.getAttribute('aria-label') !== 'Özetlenecek metin') return;
-                          e.preventDefault();
-                          target.dispatchEvent(new KeyboardEvent('keydown', {
-                            key: 'Enter', code: 'Enter', keyCode: 13, which: 13,
-                            bubbles: true, cancelable: true, ctrlKey: true, metaKey: true,
-                          }));
-                        };
-                        doc.addEventListener('keydown', handler);
-                        doc._smartdigestEnterHandler = handler;
-                      })();
-                    </script>
-                    """,
-                    height=0,
-                )
-            if text and st.session_state.latest_summary:
-                st.button(
-                    "Temizle",
-                    use_container_width=True,
-                    on_click=lambda: st.session_state.update(paste_text=""),
+            text = st.text_area(
+                "Özetlenecek metin",
+                height=220,
+                placeholder="Özetlemek istediğiniz metni buraya yapıştırın…",
+                label_visibility="collapsed",
+                key="paste_text",
+            )
+            st.caption(f"En fazla {MAX_SUMMARY_INPUT_CHARS:,} karakter kabul edilir.")
+
+        mode = "fast"
+        length = "balanced"
+        retain_source = False
+        retention_days = 7
+        with st.expander("Gelişmiş ayarlar", expanded=False):
+            st.markdown('<p class="sd-field-label">Özet modu</p>', unsafe_allow_html=True)
+            mode = st.segmented_control(
+                "Özet modu",
+                ["fast", "verified"],
+                format_func=lambda value: "Hızlı" if value == "fast" else "Kaynak kontrollü",
+                default="fast",
+                required=True,
+                label_visibility="collapsed",
+                help="Kaynak kontrollü mod, özet iddialarını belgedeki ilgili sayfalarla otomatik olarak eşleştirir.",
+            )
+            st.caption("Kaynak kontrollü mod, iddiaları ilgili belge bölümleriyle eşleştirir.")
+
+            st.markdown('<p class="sd-field-label">Özet uzunluğu</p>', unsafe_allow_html=True)
+            length = st.segmented_control(
+                "Özet uzunluğu",
+                ["balanced", "detailed"],
+                format_func=lambda value: {"balanced": "Dengeli", "detailed": "Detaylı"}[value],
+                default="balanced",
+                required=True,
+                label_visibility="collapsed",
+            )
+
+            retain_source = st.checkbox(
+                "Kaynak belgeyi geçmişte şifreli sakla",
+                value=False,
+                help="Kapalıyken yalnızca özet saklanır. Açıkken kaynak seçilen süre sonunda silinir.",
+            )
+            if retain_source:
+                retention_days = st.selectbox(
+                    "Kaynağı otomatik sil",
+                    [1, 7, 30],
+                    index=1,
+                    format_func=lambda days: f"{days} gün sonra",
                 )
 
+        st.caption("Varsayılan ayar: hızlı, dengeli özet. Kaynak metin geçmişte saklanmaz.")
+        submitted = st.button(
+            "Özeti oluştur", type="primary", use_container_width=True, disabled=not bool(text)
+        )
         if submitted:
             if not text:
                 st.warning("Lütfen özetlenecek bir metin ekleyin.")
@@ -511,21 +479,21 @@ with tab1:
                 unsafe_allow_html=True,
             )
 
-        action1, action2, action3 = st.columns([2, 1, 2])
+        action1, action2, action3 = st.columns(3)
         with action1:
-            st.download_button(
-                "↓ TXT indir", summary, "smartdigest_ozet.txt", use_container_width=True
-            )
-        with action2:
-            copy_summary_button(summary)
-        with action3:
-            if st.button("Yeni özet", use_container_width=True):
+            if st.button("Yeni özet oluştur", type="primary", use_container_width=True):
                 st.session_state.latest_summary = None
                 st.session_state.latest_evidence = []
                 st.session_state.latest_text = None
                 st.session_state.latest_length = "balanced"
                 st.session_state.chat_messages = []
                 st.rerun()
+        with action2:
+            copy_summary_button(summary)
+        with action3:
+            st.download_button(
+                "TXT indir", summary, "smartdigest_ozet.txt", use_container_width=True
+            )
 
         evidence = st.session_state.get("latest_evidence", [])
         if evidence:
@@ -632,5 +600,3 @@ with tab1:
 
 with tab2:
     render_history(history_data, API_URL, auth_headers)
-with tab3:
-    render_account(API_URL, auth_headers, local_storage)
