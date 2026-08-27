@@ -1,0 +1,310 @@
+{
+  "name": "SmartDigest gerçek Türkçe PDF değerlendirmesi",
+  "version": "1",
+  "method": "Her belgenin seçili ve elle doğrulanmış sayfa penceresi değerlendirilmiştir.",
+  "document_validation": [
+    {
+      "id": "kmu_stratejik_plan",
+      "page_count": 85,
+      "page_limit": 150,
+      "expected_rejection": false,
+      "actual_rejection": false,
+      "passed": true
+    },
+    {
+      "id": "stratejik_planlama_ders",
+      "page_count": 74,
+      "page_limit": 150,
+      "expected_rejection": false,
+      "actual_rejection": false,
+      "passed": true
+    },
+    {
+      "id": "tubitak_2025_faaliyet_sunus",
+      "page_count": 241,
+      "page_limit": 150,
+      "expected_rejection": true,
+      "actual_rejection": true,
+      "passed": true
+    }
+  ],
+  "cases": [
+    {
+      "id": "kmu_stratejik_plan",
+      "title": "Karamanoğlu Mehmetbey Üniversitesi Stratejik Planı",
+      "source_text": "[Sayfa 6]\n1. GELECEĞE BAKIŞ\nKaramanoğlu Mehmetbey Üniversitesi; çağdaş ve etik değerleri\nbenimseyen, hukukun üstünlüğüne inanan, ulusal ve evrensel\ndüzeyde donanıma sahip, üstün nitelikli bireyler yetiştirmeyi ve\nbilim, teknoloji, kültür ve sanata katkı sağlamayı özgörev edinmiştir.\nBilgi çağının gerektirdiği nitelikleri taşıyan, insanlık onurunu her\nşeyin üstünde tutan, hayalleri ve idealleri olan bireyler yetiştiren\nve gıda sektörünün iyileştirilmesi ile Türk dilinin araştırılması,\nyaygınlaştırılması, Türkçe bilincinin yerleştirilmesi konularında\nöncü çalışmalar yapan “sıradan değil, aranan” bir üniversite olmaktır.\n6\n\n[Sayfa 7]\n1.3. Temel Değerler ve İlkelerimiz\nYenilikçilik\nKatılımcılık ve demokratiklik\nEtik değerlere bağlılık\nŞeffaflık\nÖğrenci merkezlilik\nKent, ülke ve dünya sorunlarına duyarlılık\nGüvenilirlik\nEvrensellik\nBilimsellik\nİnsan hak ve özgürlüklerine saygı\nTürk dilinin doğru kullanılması ve\nyaygınlaştırılmasına karşı duyarlılık\n7\n\n[Sayfa 8]\n1.4. Stratejik Amaçlar, Hedefl er, Stratejiler, Göstergeler ve Sorumlu Birimler\nKamu kurum ve kuruluşları, salt kendi amaçlarını gerçekleştirmek üzere oluşturulmuş,\nbirbirlerinden ayrılmış varlıklar değildir. Bir kamu kurumu olan üniversitemiz kamu yönetimi\ndiye adlandırılan daha üst bir bütünün parçasıdır. Dolayısıyla, Üniversitemizin stratejik planının\nhazırlanmasında diğer kamu kuruluşları ile etkileşimi değerlendirilmiş, planın daha üst ölçekli planlarla\nilişkisi kurulmaya çalışılmıştır. Bu anlamda Yüksek Öğretim Kurulunca 2007 yılında hazırlanarak\nyayımlanan Türkiye’nin Yükseköğretim Stratejisi isimli yayınından geniş ölçüde yararlanılmıştır.\nBu kapsamda, durum analizi çalışmaları yapılmış, ortaya çıkan duruma uygun olarak özgörev,\nuzgörüş, temel değerler belirlenmiş ve bu çalışmalar sonucunda Üniversitemiz 2013-2017 stratejik\nplan çalışmaları üç temel eksen üzerine kurulmuştur.\nBunlar ;\nKurumsallaşma Ekseni,\nEğitim Ekseni,\nBilimsel Araştırma ve Yayın Ekseni.\nKurumsallaşma Bilimsel Araştırma ve Yayın\nEğitim\n8\n\n[Sayfa 9]\nKURUMSALLAŞMA EKSENİ\nEtkin ve verimli bir idari yapı kurarak, ulusal\nve uluslararası tanınırlığı artırmak ve kurumsal\ngelişmeyi sağlamak.\n9",
+      "document": {
+        "filename": "kmu_stratejik_plan.pdf",
+        "page_count": 85,
+        "evaluated_pages": [
+          6,
+          7,
+          8,
+          9
+        ]
+      },
+      "expected": {
+        "facts": [
+          {
+            "text": "Üniversite çağdaş ve etik değerleri benimseyen, hukukun üstünlüğüne inanan nitelikli bireyler yetiştirmeyi amaçlar.",
+            "source_pages": [
+              6
+            ]
+          },
+          {
+            "text": "Üniversite bilim, teknoloji, kültür ve sanata katkı sağlamayı özgörev edinmiştir.",
+            "source_pages": [
+              6
+            ]
+          },
+          {
+            "text": "Stratejik plan çalışmaları kurumsallaşma, eğitim-öğretim ve araştırma-geliştirme olmak üzere üç temel eksen üzerine kurulmuştur.",
+            "source_pages": [
+              8
+            ]
+          },
+          {
+            "text": "Kurumsallaşma ekseni etkin ve verimli bir idari yapı ile ulusal ve uluslararası tanınırlığı artırmayı hedefler.",
+            "source_pages": [
+              9
+            ]
+          }
+        ],
+        "numbers": [
+          {
+            "value": "3",
+            "context": "stratejik plan üç temel eksen üzerine kurulmuştur"
+          }
+        ],
+        "qa": [
+          {
+            "question": "Üniversitenin stratejik planı kaç temel eksen üzerine kurulmuştur?",
+            "answer": "Üç temel eksen üzerine kurulmuştur.",
+            "source_pages": [
+              8
+            ]
+          },
+          {
+            "question": "Kurumsallaşma ekseninin amacı nedir?",
+            "answer": "Etkin ve verimli bir idari yapı kurmak, ulusal ve uluslararası tanınırlığı artırmak ve kurumsal gelişmeyi sağlamaktır.",
+            "source_pages": [
+              9
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "summary": "### Özet\nKaramanoğlu Mehmetbey Üniversitesi; çağdaş ve etik değerleri benimseyen, hukukun üstünlüğüne inanan, ulusal ve evrensel düzeyde donanıma sahip nitelikli bireyler yetiştirmeyi amaçlamaktadır. Bilim, teknoloji, kültür ve sanata katkı sağlamayı özgörev edinen kurum, gıda sektörünün iyileştirilmesi ile Türk dilinin araştırılması ve yaygınlaştırılması alanlarında öncü çalışmalar yapmayı hedeflemektedir. Üniversite bu doğrultuda hazırladığı 2013-2017 dönemi stratejik planını kurumsallaşma, eğitim ile bilimsel araştırma ve yayın olmak üzere toplam üç temel eksen üzerine kurmuştur.\n\n### Öne çıkanlar\n- [Önemli] Üniversitenin temel değerleri ve ilkeleri arasında yenilikçilik, katılımcılık ve demokratiklik, etik değerlere bağlılık, şeffaflık, öğrenci merkezlilik, güvenilirlik, evrensellik, bilimsellik ile insan hak ve özgülüklerine saygı yer almaktadır. _(Kaynak: s. 7 · destek %66)_\n- [Detay] Stratejik planın hazırlanması aşamasında diğer kamu kuruluşları ile etkileşimler değerlendirilmiş ve Yükseköğretim Kurulu tarafından 2007 yılında yayımlanan Türkiye'nin Yükseköğretim Stratejisi isimli yayından geniş ölçüde yararlanılmıştır. _(Kaynak: s. 8 · destek %45)_\n- [Detay] Kurumsallaşma ekseni kapsamında etkin ve verimli bir idari yapı kurularak kurumsal gelişmenin sağlanması ve ulusal ile uluslararası düzeyde tanınırlığın artırılması hedeflenmektedir. _(Kaynak: s. 9 · destek %50)_",
+        "qa": [
+          {
+            "question": "Üniversitenin stratejik planı kaç temel eksen üzerine kurulmuştur?",
+            "answer": "Üniversitenin stratejik planı üç temel eksen üzerine kurulmuştur.",
+            "sources": [
+              "Sayfa 8, paragraf 6: Bu kapsamda, durum analizi çalışmaları yapılmış, ortaya çıkan duruma uygun olarak özgörev,\nuzgörüş, temel değerler belirlenmiş ve bu çalışmalar sonucunda Üniversitemiz 2013-2017 stratejik\nplan çalışmaları üç temel eksen üzerine kurulmuştur.",
+              "Sayfa 8, paragraf 4: Dolayısıyla, Üniversitemizin stratejik planının\nhazırlanmasında diğer kamu kuruluşları ile etkileşimi değerlendirilmiş, planın daha üst ölçekli planlarla\nilişkisi kurulmaya çalışılmıştır.",
+              "Sayfa 8, paragraf 2: Stratejik Amaçlar, Hedefl er, Stratejiler, Göstergeler ve Sorumlu Birimler\nKamu kurum ve kuruluşları, salt kendi amaçlarını gerçekleştirmek üzere oluşturulmuş,\nbirbirlerinden ayrılmış varlıklar değildir.",
+              "Sayfa 7, paragraf 2: Temel Değerler ve İlkelerimiz\nYenilikçilik\nKatılımcılık ve demokratiklik\nEtik değerlere bağlılık\nŞeffaflık\nÖğrenci merkezlilik\nKent, ülke ve dünya sorunlarına duyarlılık\nGüvenilirlik\nEvrensellik\nBilimsellik\nİnsan hak ve özgürlüklerine saygı\nTürk dilinin doğru kullanılması ve\nyaygınlaştırılmasına karşı duyarlılık\n7"
+            ]
+          },
+          {
+            "question": "Kurumsallaşma ekseninin amacı nedir?",
+            "answer": "Kurumsallaşma ekseninin amacı; etkin ve verimli bir idari yapı kurarak ulusal ve uluslararası tanınırlığı artırmak ve kurumsal gelişmeyi sağlamaktır.",
+            "sources": [
+              "Sayfa 8, paragraf 8: Kurumsallaşma Bilimsel Araştırma ve Yayın\nEğitim\n8",
+              "Sayfa 8, paragraf 7: Bunlar ;\nKurumsallaşma Ekseni,\nEğitim Ekseni,\nBilimsel Araştırma ve Yayın Ekseni.",
+              "Sayfa 9, paragraf 1: KURUMSALLAŞMA EKSENİ\nEtkin ve verimli bir idari yapı kurarak, ulusal\nve uluslararası tanınırlığı artırmak ve kurumsal\ngelişmeyi sağlamak."
+            ]
+          }
+        ],
+        "latency_seconds": 36.31937041600031
+      }
+    },
+    {
+      "id": "stratejik_planlama_ders",
+      "title": "Stratejik Planlama Ders Notu",
+      "source_text": "[Sayfa 6]\nKurum\nInstitution\nMüessese\n2 anlamı var;\nToplumbilimsel; Belirli bir toplumda eylemler ve toplumsal ilişkileri belirleyen kurallar\nbütünü\nAile kurumu, evlilik kurumu, eğitim kurumu vs.\nKamu örgütlenmesinde etkinlik ve hizmet ağı tüm ülkeye yaygın olan, politikaları\nhükumetler tarafından oluşturulan, belirli görev ve hizmetle yükümlenmiş, hizmeti\ngerçekleştirecek bina, insan ve gereç donanımına kamusal olarak sahip, amaç ve kuralları\nbelli, belirli yasalara göre oluşturulmuş ve yönetilen örgütlenmeler\nTürk Dil Kurumu, Türkiye İstatistik Kurumu, Sosyal Hizmetler ve Çocuk Esirgeme Kurumu, Türkiye Radyo\nTelevizyon Kurumu, İş Kurumu\n\n[Sayfa 7]\nKuruluş\nTesis\nArrangement, establishment\nÖnceden belirlenmiş sınırlı ve somut bir amaca uygun düzenlenerek oluşturulmuş,\nbina, gereç, insan gücü gibi maddi ögeleri olan, hizmet üreten örgütlü bütünlük\nKamu, özel ya da sivil topluma ait olabilir\nÇocuk yuvası, kadın sığınma evi, gençlik merkezi, huzurevi, konukevi, boş zaman\ndeğerlendirme merkezi, yaşlılar dinlenme merkezi, halk eğitim merkezi, spor merkezi,\ntoplum merkezi, danışma merkezi, sağlık ocağı, dispanser vb\n\n[Sayfa 8]\nKurum ve Kuruluş Farkı\n• Daha ülke çapında ya da bölgesel olarak yaygın\n• Geniş politikalar güder\n• Bina içindeki erek grubuna ya da binanın yakın çevresine hizmet amacı ile sınırlı\n• Seçtiği somut hizmet ile sınırlı\n• Yerel\n• Bir kurum ya da STK’ya bağlı olabilir\nKuruluş\nKurum\n\n[Sayfa 9]\nTarihçe\nSavaşta düşmana karşı avantaj sağlayabilmek için zayıflık ve üstünlüklerin belirlenmesi\nStrateji\n2. Dünya Savaşı sonrası – Stratejik planlama\nÖzel sektör\nBüyüyen ekonomiler, rekabet vs.\nİşletmelerde uygulanmaya başlanan uzun vadeli planlama çalışmaları\nUzun vadeli plan: Analitik bir düşünce tarzından ziyade, karşılaşılan güncel olayların geleceğe\ndönük olarak tahmin edilmesi\nTemel amaç: Örgütün uzak ve yakın çevresinde neler olabileceği, nasıl bir gelecekle\nkarşılaşılabileceği konularını açıklığa kavuşturmak\n\n[Sayfa 10]\nTarihçe\n1962 - Alfred Chandler «Structure and Strategy»\nBir organizasyonun strateji kurgusu ile örgütlenme yapısı arasındaki bağlantının\nincelenmesi\nUzun vadeli planlamada analitik yaklaşım\nAmaçların belirlenmesi ve bu amaçlara uygun stratejiler geliştirilmesi\nRakiplerin faaliyetleri, düşünce tarzları, olası karşı tutumları veya tepkileri\n1965 - Igor Ansoff «Corporate Strategy»\n\n[Sayfa 11]\nTarihçe\n1980’ler\nÖrgütün dört duvarı dışında neler oluyor?\nStratejik planlar örgütle çevresi arasındaki ilişkileri algılayabilecek şekilde yeniden\ndüzenlendi\nTicari ilişkilerde rekabet avantajını hesaplama ve kazanmayla ilgilenmeye başladı\nKamu kurum ve kuruluşlarında stratejik planlamanın öneminin artışı\nGünümüzde; stratejik yönetim, stratejik görüş, stratejik liderlik, stratejik …",
+      "document": {
+        "filename": "stratejik_planlama_ders.pdf",
+        "page_count": 74,
+        "evaluated_pages": [
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ]
+      },
+      "expected": {
+        "facts": [
+          {
+            "text": "Kurum kavramının toplumbilimsel ve kamu örgütlenmesine ilişkin iki anlamı vardır.",
+            "source_pages": [
+              6
+            ]
+          },
+          {
+            "text": "Kuruluş, önceden belirlenmiş sınırlı ve somut bir amaca göre oluşturulan hizmet üreten örgütlü bütünlüktür.",
+            "source_pages": [
+              7
+            ]
+          },
+          {
+            "text": "Stratejik planlama İkinci Dünya Savaşı sonrasında özel sektörde uygulanmaya başlamıştır.",
+            "source_pages": [
+              9
+            ]
+          },
+          {
+            "text": "Alfred Chandler 1962 yılında strateji ile örgütlenme yapısı arasındaki bağlantıyı incelemiştir.",
+            "source_pages": [
+              10
+            ]
+          },
+          {
+            "text": "Igor Ansoff Corporate Strategy çalışmasını 1965 yılında yayımlamıştır.",
+            "source_pages": [
+              10
+            ]
+          }
+        ],
+        "numbers": [
+          {
+            "value": "2",
+            "context": "kurum kavramının iki anlamı vardır"
+          },
+          {
+            "value": "1962",
+            "context": "Alfred Chandler strateji ile örgütlenme yapısı"
+          },
+          {
+            "value": "1965",
+            "context": "Igor Ansoff Corporate Strategy"
+          }
+        ],
+        "qa": [
+          {
+            "question": "Kurum kavramının kaç anlamı vardır?",
+            "answer": "İki anlamı vardır: toplumbilimsel anlam ve kamu örgütlenmesine ilişkin anlam.",
+            "source_pages": [
+              6
+            ]
+          },
+          {
+            "question": "Kuruluş ile kurum arasındaki temel fark nedir?",
+            "answer": "Kuruluş yerel, somut ve sınırlı bir hizmete odaklanırken kurum daha geniş politika izler ve ülke veya bölge çapında yaygındır.",
+            "source_pages": [
+              7,
+              8
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "summary": "### Özet\nKaynak metin; kurum kavramını toplumbilimsel kurallar bütünü ve ülke çapında yaygın kamu örgütlenmeleri olarak açıklarken, kuruluş kavramını belirli ve somut bir amaca yönelik yerel hizmet üreten örgütlü bütünlükler olarak tanımlamaktadır. Metin ayrıca, 2. Dünya Savaşı sonrasından günümüze kadar stratejik planlamanın geçirdiği evreleri, bu süreçteki analitik yaklaşım değişimlerini ve 1980'lerde kamu kurumlarında artan önemini ele almaktadır.\n\n### Öne çıkanlar\n- [Kritik] 2. Dünya Savaşı sonrasında özel sektörde uygulamaya başlanan ilk uzun vadeli planlar, analitik bir düşünce tarzından ziyade karşılaşılan güncel olayların geleceğe dönük olarak tahmin edilmesiyle sınırlı kalmıştır. _(Kaynak: s. 9 · destek %25)_\n- [Önemli] 1980'li yıllarda stratejik planlar örgütle çevresi arasındaki ilişkileri algılayabilecek ve ticari ilişkilerde rekabet avantajını hesaplayıp kazanabilecek şekilde yeniden düzenlenmiştir. _(Kaynak: s. 11 · destek %25)_\n- [Detay] Alfred Chandler 1962 yılında yayımladığı Structure and Strategy adlı kitabında bir organizasyonun strateji kurgusu ile örgütlenme yapısı arasındaki bağlantıyı incelemiştir. _(Kaynak: s. 10 · destek %63)_",
+        "qa": [
+          {
+            "question": "Kurum kavramının kaç anlamı vardır?",
+            "answer": "Belge parçalarına göre kurum kavramının 2 anlamı vardır.",
+            "sources": [
+              "Sayfa 6, paragraf 1: Kurum\nInstitution\nMüessese\n2 anlamı var;\nToplumbilimsel; Belirli bir toplumda eylemler ve toplumsal ilişkileri belirleyen kurallar\nbütünü\nAile kurumu, evlilik kurumu, eğitim kurumu vs.",
+              "Sayfa 8, paragraf 1: Kurum ve Kuruluş Farkı\n• Daha ülke çapında ya da bölgesel olarak yaygın\n• Geniş politikalar güder\n• Bina içindeki erek grubuna ya da binanın yakın çevresine hizmet amacı ile sınırlı\n• Seçtiği somut hizmet ile sınırlı\n• Yerel\n• Bir kurum ya da STK’ya bağlı olabilir\nKuruluş\nKurum",
+              "Sayfa 11, paragraf 2: Stratejik planlar örgütle çevresi arasındaki ilişkileri algılayabilecek şekilde yeniden\ndüzenlendi\nTicari ilişkilerde rekabet avantajını hesaplama ve kazanmayla ilgilenmeye başladı\nKamu kurum ve kuruluşlarında stratejik planlamanın öneminin artışı\nGünümüzde; stratejik yönetim, stratejik görüş, stratejik liderlik, stratejik …"
+            ]
+          },
+          {
+            "question": "Kuruluş ile kurum arasındaki temel fark nedir?",
+            "answer": "Verilen belge parçalarında \"kuruluş ile kurum arasındaki temel fark\" sorusunun doğrudan yanıtı yer almamaktadır. Belgede yalnızca \"Kurum ve Kuruluş Farkı\" başlığı altında bazı maddeler verilmiş, ancak bu maddelerin hangisinin kuruma, hangisinin kuruluşa ait olduğu net olarak ayrıştırılmamıştır.",
+            "sources": [
+              "Sayfa 8, paragraf 1: Kurum ve Kuruluş Farkı\n• Daha ülke çapında ya da bölgesel olarak yaygın\n• Geniş politikalar güder\n• Bina içindeki erek grubuna ya da binanın yakın çevresine hizmet amacı ile sınırlı\n• Seçtiği somut hizmet ile sınırlı\n• Yerel\n• Bir kurum ya da STK’ya bağlı olabilir\nKuruluş\nKurum",
+              "Sayfa 11, paragraf 2: Stratejik planlar örgütle çevresi arasındaki ilişkileri algılayabilecek şekilde yeniden\ndüzenlendi\nTicari ilişkilerde rekabet avantajını hesaplama ve kazanmayla ilgilenmeye başladı\nKamu kurum ve kuruluşlarında stratejik planlamanın öneminin artışı\nGünümüzde; stratejik yönetim, stratejik görüş, stratejik liderlik, stratejik …",
+              "Sayfa 9, paragraf 3: İşletmelerde uygulanmaya başlanan uzun vadeli planlama çalışmaları\nUzun vadeli plan: Analitik bir düşünce tarzından ziyade, karşılaşılan güncel olayların geleceğe\ndönük olarak tahmin edilmesi\nTemel amaç: Örgütün uzak ve yakın çevresinde neler olabileceği, nasıl bir gelecekle\nkarşılaşılabileceği konularını açıklığa kavuşturmak",
+              "Sayfa 6, paragraf 1: Kurum\nInstitution\nMüessese\n2 anlamı var;\nToplumbilimsel; Belirli bir toplumda eylemler ve toplumsal ilişkileri belirleyen kurallar\nbütünü\nAile kurumu, evlilik kurumu, eğitim kurumu vs."
+            ]
+          }
+        ],
+        "latency_seconds": 115.37793275000149
+      }
+    },
+    {
+      "id": "tubitak_2025_faaliyet_sunus",
+      "title": "TÜBİTAK 2025 Faaliyet Raporu - Başkan Sunuşu",
+      "source_text": "[Sayfa 9]\nTÜRKİYE BİLİMSEL VE TEKNOLOJİK ARAŞTIRMA KURUMU FAALİYET RAPORU - 2025\ndesteklemek amacıyla halkımıza sunduğumuz TÜBİTAK Popüler Bilim Dergileri Ücretsiz\nElektronik Arşivi, yıl boyunca 12 milyon indirilme sayısına ulaşarak devasa bir dijital\nkütüphane işlevi görmüştür. Genç kuşağın en güçlü dijital buluşma noktalarından biri olan\nBilim Genç platformumuz, 45,5 milyon görüntülenme ile bilimsel merakın dijital dünyadaki\nadresi olmayı sürdürmüştür.\nAraştırma Merkez ve Enstitülerimiz bünyesinde savunmadan uzaya, kuantumdan yapay\nzekaya, nanoteknolojiden biyoteknolojiye, çip teknolojilerinden afet teknolojilerine kadar\nstratejik ve kritik alanlarda önemli çalışmalar yürütüyoruz. Millî alt sistemlerle donatılan SOM\nSeyir Füzesi, millî bileşenler kullanılarak geliştirilen 20kW’lık yüksek güçlü lazer sistemi IŞIK,\nTürkiye’nin ilk yerli ve millî sivil gözetim radarı olan Milli Gözetim Radar, %100 hidrojen ile\nçalışan en yüksek güçteki Hidrojen Motorumuz, 27 Milyar Parametreli Türkçesi\nZenginleştirilmiş versiyonuyla Türkçe Büyük Dil Temel Modelimiz, hesaplama kapasitesi\nartırılmış Süper Bilgisayarımız ARF gibi 2025 yılında yürüttüğümüz projelerden çıkan yerli ve\nmilli teknolojilerimizle ülkemizin bağımsızlığına katkı sunmaya devam ettik.\n2025 yılı, TÜBİTAK’ın uluslararası bilim, teknoloji ve yenilik ekosistemindeki stratejik\nkonumunu güçlendirdiği; yalnızca iş birliği sayısını değil, bu iş birliklerinin etki, görünürlük ve\nyönetişim boyutunu derinleştirdiği bir yıl olmuştur. Bu dönemde TÜBİTAK, küresel bilim\ndiplomasisi araçlarını daha sistematik biçimde kullanarak çok taraflı platformlarda politika\nşekillendirici bir aktör olarak öne çıkmıştır.\nMilli Teknoloji Hamlesinin öncü kurumlarından biri olarak, desteklerimizle Ar-Ge\nekosistemini güçlendirmeye devam edeceğimizi ve çok daha heyecanla yenilikçi yüksek\nteknolojileri geliştirerek ilklere imza atacağımızı temin ediyorum. TÜBİTAK’ın 2025 yılı\nfaaliyet ve projelerinin yürütülmesinde ve bu raporun hazırlanmasında emeği geçen tüm\nçalışanlarımıza teşekkür ediyorum. TÜBİTAK 2025 Yılı Faaliyet Raporunun kamuoyuna ve\ntüm paydaşlarımıza faydalı olmasını diliyorum.\nProf. Dr. Orhan AYDIN\nBaşkan\nvii",
+      "document": {
+        "filename": "tubitak_2025_faaliyet.pdf",
+        "page_count": 241,
+        "evaluated_pages": [
+          9
+        ]
+      },
+      "expected": {
+        "facts": [
+          {
+            "text": "Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi yıl boyunca 12 milyon indirmeye ulaşmıştır.",
+            "source_pages": [
+              9
+            ]
+          },
+          {
+            "text": "Bilim Genç platformu 45,5 milyon görüntülenmeye ulaşmıştır.",
+            "source_pages": [
+              9
+            ]
+          }
+        ],
+        "numbers": [
+          {
+            "value": "12",
+            "context": "Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi milyon indirilme"
+          },
+          {
+            "value": "45,5",
+            "context": "Bilim Genç platformu milyon görüntülenme"
+          }
+        ],
+        "qa": [
+          {
+            "question": "Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi kaç indirmeye ulaşmıştır?",
+            "answer": "12 milyon indirmeye ulaşmıştır.",
+            "source_pages": [
+              9
+            ]
+          },
+          {
+            "question": "Bilim Genç platformu kaç görüntülenmeye ulaşmıştır?",
+            "answer": "45,5 milyon görüntülenmeye ulaşmıştır.",
+            "source_pages": [
+              9
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "summary": "### Özet\nTÜBİTAK, 2025 yılında araştırma merkezleri ve enstitüleri aracılığıyla savunmadan uzaya, kuantumdan yapay zekaya, nanoteknolojiden biyoteknolojiye, çip teknolojilerinden afet teknolojilerine kadar kritik ve stratejik alanlarda özgün projeler yürütmüştür. Millî Teknoloji Hamlesinin öncü kurumlarından biri olarak destekleriyle Ar-Ge ekosistemini güçlendiren kurum, ülkemizin bağımsızlığına katkı sunmaya devam etmiştir.\n\n### Öne çıkanlar\n- [Önemli] TÜBİTAK Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi yıl boyunca 12 milyon indirilme sayısına ulaşarak devasa bir dijital kütüphane işlevi görürken, genç kuşağın dijital buluşma noktası Bilim Genç platformu 45,5 milyon görüntülenme elde etmiştir. _(Kaynak: s. 9 · destek %25)_\n- [Detay] Kurumun 2025 yılındaki faaliyetleri kapsamında; millî alt sistemlerle donatılan SOM Seyir Füzesi, 20kW’lık yüksek güçlü lazer sistemi IŞIK, ilk yerli ve millî sivil gözetim radarı Milli Gözetim Radar ve %100 hidrojen ile çalışan en yüksek güçteki Hidrojen Motoru geliştirilmiştir. _(Kaynak: s. 9 · destek %78)_\n- [Önemli] 2025 yılı boyunca küresel bilim diplomasisi araçları daha sistematik biçimde kullanılmış, uluslararası iş birliklerinin etki, görünürlük ve yönetişim boyutu derinleştirilerek çok taraflı platformlarda politika şekillendirici bir aktör olarak öne çıkılmıştır. _(Kaynak: s. 9 · destek %25)_",
+        "qa": [
+          {
+            "question": "Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi kaç indirmeye ulaşmıştır?",
+            "answer": "TÜBİTAK Popüler Bilim Dergileri Ücretsiz Elektronik Arşivi, yıl boyunca 12 milyon indirilme sayısına ulaşmıştır.",
+            "sources": [
+              "Sayfa 9, paragraf 1: TÜRKİYE BİLİMSEL VE TEKNOLOJİK ARAŞTIRMA KURUMU FAALİYET RAPORU - 2025\ndesteklemek amacıyla halkımıza sunduğumuz TÜBİTAK Popüler Bilim Dergileri Ücretsiz\nElektronik Arşivi, yıl boyunca 12 milyon indirilme sayısına ulaşarak devasa bir dijital\nkütüphane işlevi görmüştür.",
+              "Sayfa 9, paragraf 6: Bu dönemde TÜBİTAK, küresel bilim\ndiplomasisi araçlarını daha sistematik biçimde kullanarak çok taraflı platformlarda politika\nşekillendirici bir aktör olarak öne çıkmıştır.",
+              "Sayfa 9, paragraf 2: Genç kuşağın en güçlü dijital buluşma noktalarından biri olan\nBilim Genç platformumuz, 45,5 milyon görüntülenme ile bilimsel merakın dijital dünyadaki\nadresi olmayı sürdürmüştür.",
+              "Sayfa 9, paragraf 5: 2025 yılı, TÜBİTAK’ın uluslararası bilim, teknoloji ve yenilik ekosistemindeki stratejik\nkonumunu güçlendirdiği; yalnızca iş birliği sayısını değil, bu iş birliklerinin etki, görünürlük ve\nyönetişim boyutunu derinleştirdiği bir yıl olmuştur."
+            ]
+          },
+          {
+            "question": "Bilim Genç platformu kaç görüntülenmeye ulaşmıştır?",
+            "answer": "Bilim Genç platformu 45,5 milyon görüntülenmeye ulaşmıştır.",
+            "sources": [
+              "Sayfa 9, paragraf 2: Genç kuşağın en güçlü dijital buluşma noktalarından biri olan\nBilim Genç platformumuz, 45,5 milyon görüntülenme ile bilimsel merakın dijital dünyadaki\nadresi olmayı sürdürmüştür.",
+              "Sayfa 9, paragraf 6: Bu dönemde TÜBİTAK, küresel bilim\ndiplomasisi araçlarını daha sistematik biçimde kullanarak çok taraflı platformlarda politika\nşekillendirici bir aktör olarak öne çıkmıştır.",
+              "Sayfa 9, paragraf 5: 2025 yılı, TÜBİTAK’ın uluslararası bilim, teknoloji ve yenilik ekosistemindeki stratejik\nkonumunu güçlendirdiği; yalnızca iş birliği sayısını değil, bu iş birliklerinin etki, görünürlük ve\nyönetişim boyutunu derinleştirdiği bir yıl olmuştur.",
+              "Sayfa 9, paragraf 1: TÜRKİYE BİLİMSEL VE TEKNOLOJİK ARAŞTIRMA KURUMU FAALİYET RAPORU - 2025\ndesteklemek amacıyla halkımıza sunduğumuz TÜBİTAK Popüler Bilim Dergileri Ücretsiz\nElektronik Arşivi, yıl boyunca 12 milyon indirilme sayısına ulaşarak devasa bir dijital\nkütüphane işlevi görmüştür."
+            ]
+          }
+        ],
+        "latency_seconds": 43.16908891699859
+      }
+    }
+  ]
+}
