@@ -7,6 +7,7 @@ from summary_utils import (
     email_draft,
     error_detail,
     meeting_notes,
+    numeric_chips,
     numeric_facts,
     summary_sections,
 )
@@ -65,34 +66,71 @@ def test_concise_overview_limits_sentence_count():
     assert result == "Cümle 1. Cümle 2. Cümle 3."
 
 
-def test_numeric_facts_extracts_value_and_caption():
+def test_numeric_facts_returns_deduped_value_list():
     items = ["Bütçe 45 milyon TL'den 58 milyon TL'ye yükseldi."]
-    facts = numeric_facts(items)
-    assert len(facts) == 1
-    value, caption = facts[0]
-    assert value == "45 milyon → 58 milyon"
-    assert "Bütçe" in caption
+    assert numeric_facts(items) == ["45 milyon → 58 milyon"]
 
 
 def test_numeric_facts_skips_items_without_numbers():
-    items = ["Sayı içermeyen bir cümle."]
-    assert numeric_facts(items) == []
+    assert numeric_facts(["Sayı içermeyen bir cümle."]) == []
 
 
-def test_numeric_facts_caption_truncates_at_word_boundary():
-    long_item = "Bu " + ("çok uzun bir cümle parçası " * 5) + "12"
-    facts = numeric_facts([long_item])
-    value, caption = facts[0]
-    assert caption.endswith("…")
-    assert not caption[:-1].endswith(" ")
+def test_numeric_facts_keeps_word_range_as_digits():
+    items = ["Sağlıklı bir koloni için km² başına en fazla üç ila dört kovan önerilir."]
+    assert numeric_facts(items) == ["3-4 kovan"]
 
 
-def test_numeric_facts_caption_is_topic_specific_not_hardcoded():
-    # Regresyon testi: "tespit" kelimesi geçen ama araçla hiç ilgisi olmayan
-    # bir bulguya artık sabit/yanlış "Araç tespit doğruluğu" başlığı verilmemeli.
-    items = ["Kış aylarında güneş panellerinin üretiminin yüzde 30 altında kaldığı tespit edildi."]
-    _, caption = numeric_facts(items)[0]
-    assert caption != "Araç tespit doğruluğu"
+def test_numeric_facts_prefers_unit_value_over_bare_year():
+    items = ["Bakanlık 2021 yılında kovanların en az 30 metre uzakta olmasını önerdi."]
+    assert numeric_facts(items) == ["30 metre"]
+
+
+def test_numeric_facts_renders_change_with_arrow():
+    items = ["Kayıtlı kovan sayısı 2008'de 1.500 iken 2013'te 3.500'ü aşmıştır."]
+    assert numeric_facts(items) == ["1.500 → 3.500"]
+
+
+def test_numeric_facts_does_not_join_unrelated_numbers():
+    items = ["Kılavuz 2021'de yayımlandı ve 30 metrelik bir kural getirdi."]
+    assert numeric_facts(items) == ["30 metre"]
+
+
+def test_numeric_facts_deduplicates_identical_values():
+    items = ["Bütçe %20 arttı.", "Katılım %20 arttı."]
+    assert numeric_facts(items) == ["%20"]
+
+
+def test_numeric_facts_skips_year_only_items():
+    assert numeric_facts(["Londra'daki artış 2008 krizinin ardından hızlandı."]) == []
+
+
+def test_numeric_facts_ignores_year_range_prefers_real_change():
+    items = [
+        "Kovan sayısı 2008 ile 2013 yılları arasında 1.500 seviyesinden 3.500'ün üzerine çıkmıştır."
+    ]
+    assert numeric_facts(items) == ["1.500 → 3.500"]
+
+
+_LONG_OVERVIEW = (
+    "Kayıtlı kovan sayısı 1.500 seviyesinden 3.500'ün üzerine çıkmıştır. "
+    "Şehir merkezleri 2 ila 3 derece daha sıcaktır. "
+    "Kılavuz kovanların en az 30 metre uzakta olmasını önerir."
+)
+
+
+def test_numeric_chips_mines_overview_and_highlights():
+    highlights = ["Sağlıklı koloni için km² başına üç ila dört kovan gerekir."]
+    chips = numeric_chips(_LONG_OVERVIEW, highlights, source_length=6000)
+    assert chips == ["1.500 → 3.500", "2-3 derece", "30 metre", "3-4 kovan"]
+
+
+def test_numeric_chips_hidden_for_short_documents():
+    assert numeric_chips(_LONG_OVERVIEW, [], source_length=1800) == []
+
+
+def test_numeric_chips_hidden_when_fewer_than_three_values():
+    overview = "Bütçe 45 milyon TL'den 58 milyon TL'ye yükseldi."
+    assert numeric_chips(overview, [], source_length=6000) == []
 
 
 def test_error_detail_extracts_backend_message():
