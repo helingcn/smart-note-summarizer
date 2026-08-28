@@ -257,7 +257,7 @@ def delete_account(
     user = get_user_by_email(principal.user_id)
     if not user or not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=400, detail="Şifre hatalı.")
-    delete_user_account(user["id"], principal.user_id)
+    delete_user_account(user["id"])
     return {"status": "account-deleted"}
 
 

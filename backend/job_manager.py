@@ -15,7 +15,7 @@ from database import (
     get_job_record,
     heartbeat_job,
     job_cancel_requested,
-    purge_old_jobs,
+    purge_old_jobs_if_due,
     recover_interrupted_jobs,
     save_summary,
     update_job_record,
@@ -59,7 +59,7 @@ class JobManager:
 
     def _dispatch_loop(self) -> None:
         while not self._stopped.is_set():
-            purge_old_jobs(JOB_TTL_HOURS)
+            purge_old_jobs_if_due(JOB_TTL_HOURS)
             dispatched = False
             while self._slots.acquire(blocking=False):
                 claimed = claim_next_job(self.worker_id)
@@ -177,7 +177,7 @@ class JobManager:
                 return
 
     def get(self, user_id: str, job_id: str) -> dict | None:
-        purge_old_jobs(JOB_TTL_HOURS)
+        purge_old_jobs_if_due(JOB_TTL_HOURS)
         return get_job_record(user_id, job_id)
 
     def cancel(self, user_id: str, job_id: str) -> bool:

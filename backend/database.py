@@ -6,6 +6,7 @@ import hashlib
 import json
 import secrets
 import sqlite3
+import time
 from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
@@ -17,6 +18,23 @@ from security import decrypt_source, encrypt_source
 
 def _utc_now() -> datetime:
     return datetime.now(UTC)
+
+
+# Süresi dolmuş kaynakların ve eski işlerin temizliği idempotent birer UPDATE/DELETE
+# ama sıcak yollarda (her /history isteği, iş sürerken her poll) tekrar tekrar
+# çalıştırılıyordu. Süreç başına en fazla bu aralıkta bir kez çalışsın; birden
+# fazla süreç varsa her biri bağımsız throttle eder, yine de saniyede birden çok
+# daha iyidir.
+_PURGE_MIN_INTERVAL_SECONDS = 300
+_last_purge: dict[str, float] = {}
+
+
+def _purge_due(key: str) -> bool:
+    now = time.monotonic()
+    if now - _last_purge.get(key, 0.0) < _PURGE_MIN_INTERVAL_SECONDS:
+        return False
+    _last_purge[key] = now
+    return True
 
 
 @contextmanager
@@ -180,6 +198,11 @@ def purge_expired_sources(db_path: Path | None = None) -> int:
         return cursor.rowcount
 
 
+def purge_expired_sources_if_due(db_path: Path | None = None) -> int:
+    """Sıcak yollar (her /history isteği) için throttle'lı sürüm."""
+    return purge_expired_sources(db_path) if _purge_due("sources") else 0
+
+
 def save_summary(
     user_id: str,
     summary: str,
@@ -204,6 +227,7 @@ def save_summary(
             """,
             (user_id, encrypted_source, summary, _utc_now().isoformat(), expires_at),
         )
+        assert cursor.lastrowid is not None
         return int(cursor.lastrowid)
 
 
@@ -213,7 +237,7 @@ def get_history(
     offset: int = 0,
     db_path: Path | None = None,
 ) -> list[dict]:
-    purge_expired_sources(db_path)
+    purge_expired_sources_if_due(db_path)
     with connection(db_path) as conn:
         rows = conn.execute(
             """
@@ -275,6 +299,7 @@ def create_user(
             )
         except sqlite3.IntegrityError as error:
             raise ValueError("Bu e-posta adresi zaten kayıtlı.") from error
+        assert cursor.lastrowid is not None
         return int(cursor.lastrowid)
 
 
@@ -394,9 +419,17 @@ def revoke_all_sessions(user_id: int, db_path: Path | None = None) -> None:
         conn.execute("UPDATE users SET token_version=token_version+1 WHERE id=?", (user_id,))
 
 
-def delete_user_account(user_id: int, email: str, db_path: Path | None = None) -> None:
+def delete_user_account(user_id: int, db_path: Path | None = None) -> None:
+    # Sahiplik anahtarı iki tablo grubunda farklı: `summaries` ve `summary_jobs`
+    # kullanıcıyı e-posta (Principal.user_id) ile, `account_tokens` ise sayısal
+    # users.id ile tutar. E-postayı çağırandan almak yerine burada tek yerden
+    # okuyoruz; böylece uyumsuz (id, email) çifti geçirmek mümkün değil.
     with connection(db_path) as conn:
         conn.execute("BEGIN IMMEDIATE")
+        row = conn.execute("SELECT email FROM users WHERE id=?", (user_id,)).fetchone()
+        if row is None:
+            return
+        email = row["email"]
         conn.execute("DELETE FROM summaries WHERE user_id=?", (email,))
         conn.execute("DELETE FROM summary_jobs WHERE user_id=?", (email,))
         conn.execute("DELETE FROM account_tokens WHERE user_id=?", (user_id,))
@@ -603,6 +636,11 @@ def purge_old_jobs(hours: int, db_path: Path | None = None) -> int:
             (cutoff,),
         )
         return cursor.rowcount
+
+
+def purge_old_jobs_if_due(hours: int, db_path: Path | None = None) -> int:
+    """Dispatcher döngüsü ve her iş poll'ü için throttle'lı sürüm."""
+    return purge_old_jobs(hours, db_path) if _purge_due("jobs") else 0
 
 
 init_db()
