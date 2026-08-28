@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
 
+import auth
 import database
 import pytest
 import security
@@ -43,9 +44,9 @@ def _request(ip: str) -> Request:
     return Request({"type": "http", "headers": [], "client": (ip, 1234)})
 
 
-def test_auth_rate_limit_cannot_be_bypassed_with_different_accounts():
+def test_auth_rate_limit_cannot_be_bypassed_with_different_accounts(monkeypatch):
+    monkeypatch.setattr(auth, "_redis_client", None)
     limiter = DistributedRateLimiter()
-    limiter._redis = None
     request = _request("203.0.113.10")
     for index in range(30):
         limiter.check_auth(request, f"user-{index}@example.com", "register")

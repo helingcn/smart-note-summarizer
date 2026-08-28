@@ -68,10 +68,25 @@ JOB_WORKERS = max(1, int(os.getenv("SMARTDIGEST_JOB_WORKERS", "2")))
 JOB_TTL_HOURS = max(1, int(os.getenv("SMARTDIGEST_JOB_TTL_HOURS", "24")))
 JOB_QUEUE_LIMIT = max(JOB_WORKERS, int(os.getenv("SMARTDIGEST_JOB_QUEUE_LIMIT", "50")))
 
+# google-genai istemcisi anahtarı bu iki isimden birinde arar. Ürünün tamamı
+# buna bağlı olduğu için production'da yokluğunu açılışta yakalıyoruz; aksi hâlde
+# her özetleme işi çalışma anında kapalı bir hatayla düşerdi.
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+
+if APP_ENV == "production" and not GEMINI_API_KEY:
+    raise RuntimeError("Production ortamında GEMINI_API_KEY (veya GOOGLE_API_KEY) zorunludur.")
+
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+# Hem dosyaya (yerel geliştirme kolaylığı) hem stdout'a (container log toplama)
+# yazıyoruz; yalnızca dosyaya yazınca `docker logs` boş kalıyordu.
 logging.basicConfig(
-    filename=LOG_PATH,
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    handlers=[logging.FileHandler(LOG_PATH), logging.StreamHandler()],
 )
 logger = logging.getLogger("smartdigest")
+
+if not GEMINI_API_KEY:
+    logger.warning(
+        "GEMINI_API_KEY tanımlı değil; özetleme ve belge sohbeti çağrıları başarısız olacak."
+    )

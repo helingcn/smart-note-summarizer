@@ -153,7 +153,59 @@ def require_admin(principal: Principal = Depends(require_principal)) -> Principa
     return principal
 
 
+def client_ip(request: Request) -> str:
+    if TRUST_PROXY_HEADERS:
+        forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
+        if forwarded:
+            return forwarded
+    return request.client.host if request.client else "unknown"
+
+
+def _connect_redis():
+    if not REDIS_URL:
+        return None
+    try:
+        import redis
+
+        client = redis.Redis.from_url(REDIS_URL, decode_responses=True, socket_connect_timeout=2)
+        client.ping()
+        return client
+    except Exception as error:
+        if APP_ENV == "production":
+            raise RuntimeError("Production ortamında Redis bağlantısı zorunludur.") from error
+        return None
+
+
+# Tek Redis istemcisi hem kullanıcı bazlı hem IP/global limitler tarafından
+# paylaşılır. Redis varsa tüm sayaçlar süreçler arası ortaktır; birden çok uvicorn
+# worker'ında her worker'ın ayrı sayması limiti işçi sayısı katına çıkarıyordu.
+_redis_client = _connect_redis()
+
+
+def _too_many(window_seconds: int, retry_after: int | None = None) -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        detail="Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.",
+        headers={"Retry-After": str(retry_after or window_seconds)},
+    )
+
+
+def _redis_fixed_window(key: str, limit: int, window_seconds: int) -> None:
+    bucket = int(time.time() // window_seconds)
+    redis_key = f"smartdigest:rate:{key}:{bucket}"
+    pipeline = _redis_client.pipeline()
+    pipeline.incr(redis_key)
+    pipeline.expire(redis_key, window_seconds + 2)
+    count, _ = pipeline.execute()
+    if int(count) > limit:
+        raise _too_many(window_seconds)
+
+
 class RateLimiter:
+    """Kullanıcı (Principal) bazlı limit. Redis varsa süreçler arası ortak sabit
+    pencere; yoksa süreç içi kayan pencere (her limiter kendi sözlüğünü tutar,
+    böylece testler birbirini etkilemez)."""
+
     def __init__(self, limit: int = RATE_LIMIT_PER_MINUTE, window_seconds: int = 60):
         self.limit = limit
         self.window_seconds = window_seconds
@@ -161,19 +213,18 @@ class RateLimiter:
         self._lock = threading.Lock()
 
     def check(self, principal: Principal, scope: str = "default") -> None:
-        now = time.monotonic()
         key = f"{principal.user_id}:{scope}"
+        if _redis_client is not None:
+            _redis_fixed_window(f"user:{key}", self.limit, self.window_seconds)
+            return
+        now = time.monotonic()
         with self._lock:
             timestamps = self._requests[key]
             while timestamps and now - timestamps[0] >= self.window_seconds:
                 timestamps.popleft()
             if len(timestamps) >= self.limit:
                 retry_after = max(1, int(self.window_seconds - (now - timestamps[0])))
-                raise HTTPException(
-                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                    detail=f"Çok fazla istek gönderildi. {retry_after} saniye sonra tekrar deneyin.",
-                    headers={"Retry-After": str(retry_after)},
-                )
+                raise _too_many(self.window_seconds, retry_after)
             timestamps.append(now)
 
 
@@ -185,49 +236,16 @@ rate_limiter = RateLimiter()
 auth_rate_limiter = RateLimiter(limit=5, window_seconds=300)
 
 
-def client_ip(request: Request) -> str:
-    if TRUST_PROXY_HEADERS:
-        forwarded = request.headers.get("x-forwarded-for", "").split(",", 1)[0].strip()
-        if forwarded:
-            return forwarded
-    return request.client.host if request.client else "unknown"
-
-
 class DistributedRateLimiter:
-    """Redis varsa süreçler arası, geliştirmede ise bellek içi sabit pencere limiti."""
+    """IP ve global limitler. Redis varsa süreçler arası, yoksa bellek içi."""
 
     def __init__(self) -> None:
         self._local: dict[str, deque[float]] = defaultdict(deque)
         self._lock = threading.Lock()
-        self._redis = None
-        if REDIS_URL:
-            try:
-                import redis
-
-                self._redis = redis.Redis.from_url(
-                    REDIS_URL, decode_responses=True, socket_connect_timeout=2
-                )
-                self._redis.ping()
-            except Exception as error:
-                if APP_ENV == "production":
-                    raise RuntimeError(
-                        "Production ortamında Redis bağlantısı zorunludur."
-                    ) from error
 
     def check_key(self, key: str, limit: int, window_seconds: int) -> None:
-        if self._redis is not None:
-            bucket = int(time.time() // window_seconds)
-            redis_key = f"smartdigest:rate:{key}:{bucket}"
-            pipeline = self._redis.pipeline()
-            pipeline.incr(redis_key)
-            pipeline.expire(redis_key, window_seconds + 2)
-            count, _ = pipeline.execute()
-            if int(count) > limit:
-                raise HTTPException(
-                    status_code=429,
-                    detail="Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.",
-                    headers={"Retry-After": str(window_seconds)},
-                )
+        if _redis_client is not None:
+            _redis_fixed_window(key, limit, window_seconds)
             return
         now = time.monotonic()
         with self._lock:
@@ -235,11 +253,7 @@ class DistributedRateLimiter:
             while timestamps and now - timestamps[0] >= window_seconds:
                 timestamps.popleft()
             if len(timestamps) >= limit:
-                raise HTTPException(
-                    status_code=429,
-                    detail="Çok fazla istek gönderildi. Lütfen daha sonra tekrar deneyin.",
-                    headers={"Retry-After": str(window_seconds)},
-                )
+                raise _too_many(window_seconds)
             timestamps.append(now)
 
     def check_global_ip(self, request: Request) -> None:
