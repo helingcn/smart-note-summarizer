@@ -4,11 +4,10 @@ import time
 
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
-from api_client import APIClient, client_forward_headers
+from api_client import APIClient
 from auth_ui import render_account
 from history_ui import render_history
-from state import initialize_session_state
+from state import clear_summary_state, initialize_session_state
 from streamlit_local_storage import LocalStorage
 from summary_ui import copy_summary_button, render_summary_section
 from summary_utils import (
@@ -17,7 +16,7 @@ from summary_utils import (
     email_draft,
     error_detail,
     meeting_notes,
-    numeric_facts,
+    numeric_chips,
     summary_sections,
 )
 
@@ -35,20 +34,18 @@ initialize_session_state()
 local_storage = LocalStorage()
 
 
-def auth_headers() -> dict:
-    return api.headers()
+@st.cache_data(ttl=15, show_spinner=False)
+def fetch_history(token: str) -> list[dict]:
+    """Geçmiş, token başına 15 sn önbelleklenir; aksi hâlde her Streamlit
+    rerun'unda (bir segmented control'e tıklamak bile) backend'e istek atardı.
+    Geçmişi değiştiren işlemler `fetch_history.clear()` çağırır."""
+    return api.get_json("/history", token=token, timeout=4)
 
 
 verify_token = st.query_params.get("verify_token")
 if verify_token:
     try:
-        response = requests.post(
-            f"{API_URL}/auth/verify-email",
-            headers=client_forward_headers(),
-            json={"token": verify_token},
-            timeout=10,
-        )
-        response.raise_for_status()
+        api.post_json("/auth/verify-email", json={"token": verify_token})
         st.success("E-posta adresiniz doğrulandı. Şimdi giriş yapabilirsiniz.")
     except requests.exceptions.RequestException as error:
         st.error(f"E-posta doğrulanamadı: {error_detail(error)}")
@@ -66,13 +63,10 @@ if reset_token and not st.session_state.access_token:
             st.error("Şifreler eşleşmiyor.")
         else:
             try:
-                response = requests.post(
-                    f"{API_URL}/auth/reset-password",
-                    headers=client_forward_headers(),
+                api.post_json(
+                    "/auth/reset-password",
                     json={"token": reset_token, "new_password": reset_password_value},
-                    timeout=10,
                 )
-                response.raise_for_status()
                 st.query_params.clear()
                 st.success("Şifreniz güncellendi. Giriş yapabilirsiniz.")
             except requests.exceptions.RequestException as error:
@@ -87,18 +81,10 @@ if not st.session_state.access_token:
     stored_token = local_storage.getItem("smartdigest_token")
     if stored_token:
         try:
-            me_response = requests.get(
-                f"{API_URL}/auth/me",
-                headers={
-                    "Authorization": f"Bearer {stored_token}",
-                    **client_forward_headers(),
-                },
-                timeout=6,
-            )
-            me_response.raise_for_status()
+            me = api.get_json("/auth/me", token=stored_token, timeout=6)
             st.session_state.access_token = stored_token
-            st.session_state.user_email = me_response.json()["email"]
-            st.session_state.user_role = me_response.json().get("role", "user")
+            st.session_state.user_email = me["email"]
+            st.session_state.user_role = me.get("role", "user")
         except requests.exceptions.RequestException:
             local_storage.deleteItem("smartdigest_token")
 
@@ -114,14 +100,10 @@ if not st.session_state.access_token:
             )
         if login_submitted:
             try:
-                response = requests.post(
-                    f"{API_URL}/auth/login",
-                    headers=client_forward_headers(),
+                data = api.post_json(
+                    "/auth/login",
                     json={"email": login_email, "password": login_password},
-                    timeout=10,
                 )
-                response.raise_for_status()
-                data = response.json()
                 st.session_state.access_token = data["access_token"]
                 st.session_state.user_email = data["email"]
                 st.session_state.user_role = data.get("role", "user")
@@ -134,14 +116,7 @@ if not st.session_state.access_token:
             forgot_email = st.text_input("Hesap e-postası", key="forgot_email")
             if st.button("Sıfırlama bağlantısı gönder", key="forgot_submit"):
                 try:
-                    response = requests.post(
-                        f"{API_URL}/auth/forgot-password",
-                        headers=client_forward_headers(),
-                        json={"email": forgot_email},
-                        timeout=10,
-                    )
-                    response.raise_for_status()
-                    data = response.json()
+                    data = api.post_json("/auth/forgot-password", json={"email": forgot_email})
                     st.success(data["message"])
                     if data.get("development_token"):
                         st.info(f"Geliştirme doğrulama kodu: {data['development_token']}")
@@ -158,14 +133,10 @@ if not st.session_state.access_token:
             )
         if register_submitted:
             try:
-                response = requests.post(
-                    f"{API_URL}/auth/register",
-                    headers=client_forward_headers(),
+                data = api.post_json(
+                    "/auth/register",
                     json={"email": register_email, "password": register_password},
-                    timeout=10,
                 )
-                response.raise_for_status()
-                data = response.json()
                 if data.get("verification_required"):
                     st.success(
                         "Kayıt oluşturuldu. E-posta adresinize gönderilen bağlantıyla hesabınızı doğrulayın."
@@ -185,18 +156,17 @@ if not st.session_state.access_token:
 
 
 @st.cache_data(show_spinner="Belgeden metin çıkarılıyor...")
-def extract_pdf_text(file_bytes: bytes, file_name: str) -> dict:
+def extract_pdf_text(file_bytes: bytes, file_name: str, token: str) -> dict:
     """Aynı dosya baytlarıyla tekrar çağrılırsa API'ye gitmeden önbellekten döner;
     aksi hâlde dosya değişmese bile her Streamlit rerun'unda (ör. bir segmented
-    control'e tıklamak) PDF yeniden ayrıştırılır/OCR'lanırdı."""
-    response = requests.post(
-        f"{API_URL}/extract",
-        headers=auth_headers(),
+    control'e tıklamak) PDF yeniden ayrıştırılır/OCR'lanırdı. `token` yalnızca
+    önbellek anahtarına dahil olması için parametredir."""
+    return api.post_json(
+        "/extract",
+        token=token,
         files={"file": (file_name, file_bytes, "application/pdf")},
         timeout=60,
     )
-    response.raise_for_status()
-    return response.json()
 
 
 st.markdown(
@@ -216,26 +186,40 @@ header_space, header_account = st.columns([5, 1.2])
 with header_account:
     with st.popover("Hesap", use_container_width=True):
         st.caption(st.session_state.user_email)
-        render_account(API_URL, auth_headers, local_storage)
+        render_account(api, local_storage)
         if st.button("Bu cihazdan çıkış yap", use_container_width=True):
             st.session_state.access_token = None
             st.session_state.user_email = None
             st.session_state.user_role = "user"
             local_storage.deleteItem("smartdigest_token")
+            fetch_history.clear()
             time.sleep(0.3)
             st.rerun()
 
 try:
-    response = requests.get(f"{API_URL}/history", headers=auth_headers(), timeout=4)
-    response.raise_for_status()
-    history_data = response.json()
+    history_data = fetch_history(st.session_state.access_token)
 except requests.exceptions.RequestException:
     history_data = []
     st.warning("Geçmişe şu an ulaşılamıyor. Backend sunucusunun çalıştığını kontrol edin.")
 
-tab1, tab2 = st.tabs(["Yeni özet", "Geçmiş"])
+# st.tabs sekme seçimini session_state'te tutamaz; geçmişten "Aç" ile sonuç
+# görünümüne geçebilmek için görünümü kendimiz kontrol ediyoruz. `key=` KULLANMA:
+# widget oluşturulduktan sonra load_summary_into_view'in st.session_state.active_view'i
+# değiştirmesi StreamlitAPIException verirdi. index + geri yazma bunu aşar.
+_VIEWS = ["Yeni özet", "Geçmiş"]
+_current_view = (
+    st.session_state.active_view if st.session_state.active_view in _VIEWS else _VIEWS[0]
+)
+view = st.radio(
+    "Görünüm",
+    _VIEWS,
+    index=_VIEWS.index(_current_view),
+    horizontal=True,
+    label_visibility="collapsed",
+)
+st.session_state.active_view = view
 
-with tab1:
+if view == "Yeni özet":
     with st.container(border=True):
         st.markdown(
             '<p class="sd-panel-title">Belgenizi ekleyin</p>'
@@ -257,7 +241,11 @@ with tab1:
             )
             if uploaded_file:
                 try:
-                    extracted = extract_pdf_text(uploaded_file.getvalue(), uploaded_file.name)
+                    extracted = extract_pdf_text(
+                        uploaded_file.getvalue(),
+                        uploaded_file.name,
+                        st.session_state.access_token,
+                    )
                     text = extracted["text"]
                     method = " · OCR kullanıldı" if extracted.get("ocr_used") else ""
                     st.success(
@@ -274,7 +262,50 @@ with tab1:
                 label_visibility="collapsed",
                 key="paste_text",
             )
-            st.caption(f"En fazla {MAX_SUMMARY_INPUT_CHARS:,} karakter kabul edilir.")
+            st.caption(
+                f"En fazla {MAX_SUMMARY_INPUT_CHARS:,} karakter · Enter ile özetle, "
+                "Shift+Enter ile alt satır"
+            )
+            # st.text_area çok satırlı olduğundan Enter varsayılan olarak alt satır
+            # açar. Kullanıcı metni yapıştırıp Enter'a basınca doğrudan özetlemeye
+            # geçmek istiyor: ana dokümana bir kez kapsayıcı (capture) keydown
+            # dinleyicisi enjekte edip Enter'ı yakalıyor, metni commit etmek için
+            # textarea'yı blur ediyor ve "Özeti oluştur" düğmesi aktifleşince
+            # tıklıyoruz. Dinleyici parent realm'de yaşadığından rerun'larda kalıcı.
+            # st.iframe, components.v1.html'in yerini alan güncel API'dir; HTML
+            # string'ini JS çalıştıran bir iframe'de gömer.
+            st.iframe(
+                """
+                <script>
+                (function () {
+                  const doc = window.parent.document;
+                  if (doc.__sdPasteEnter) return;
+                  doc.__sdPasteEnter = true;
+                  const s = doc.createElement('script');
+                  s.textContent = `
+                    document.addEventListener('keydown', function (e) {
+                      if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+                      const ta = e.target;
+                      if (!ta || ta.tagName !== 'TEXTAREA' || !ta.closest) return;
+                      if (!ta.closest('[data-testid=stTextArea]')) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      ta.blur();
+                      let n = 0;
+                      const t = setInterval(function () {
+                        const b = Array.from(document.querySelectorAll('button'))
+                          .find(function (x) { return x.textContent.trim() === 'Özeti oluştur'; });
+                        if (b && !b.disabled) { b.click(); clearInterval(t); }
+                        if (++n > 25) clearInterval(t);
+                      }, 100);
+                    }, true);
+                  `;
+                  doc.head.appendChild(s);
+                })();
+                </script>
+                """,
+                height=1,  # st.iframe 0'ı kabul etmiyor; 1px görünmez
+            )
 
         mode = "fast"
         length = "balanced"
@@ -330,9 +361,8 @@ with tab1:
                 )
             else:
                 try:
-                    response = requests.post(
-                        f"{API_URL}/jobs",
-                        headers=auth_headers(),
+                    job = api.post_json(
+                        "/jobs",
                         json={
                             "text": text,
                             "mode": mode,
@@ -342,8 +372,7 @@ with tab1:
                         },
                         timeout=15,
                     )
-                    response.raise_for_status()
-                    st.session_state.active_job_id = response.json()["job_id"]
+                    st.session_state.active_job_id = job["job_id"]
                     st.session_state.pending_summary_text = text
                     st.session_state.pending_summary_length = length
                     st.session_state.active_job_poll_count = 0
@@ -359,11 +388,7 @@ with tab1:
             if not job_id:
                 return
             try:
-                job_response = requests.get(
-                    f"{API_URL}/jobs/{job_id}", headers=auth_headers(), timeout=10
-                )
-                job_response.raise_for_status()
-                job = job_response.json()
+                job = api.get_json(f"/jobs/{job_id}", timeout=10)
             except requests.exceptions.RequestException as error:
                 st.session_state.active_job_id = None
                 st.error(f"İş durumu alınamadı: {error_detail(error)}")
@@ -380,9 +405,7 @@ with tab1:
             with cancel_col:
                 if st.button("İptal et", key=f"cancel_{job_id}", use_container_width=True):
                     try:
-                        requests.delete(
-                            f"{API_URL}/jobs/{job_id}", headers=auth_headers(), timeout=10
-                        )
+                        api.delete(f"/jobs/{job_id}", timeout=10)
                     except requests.exceptions.RequestException:
                         pass
 
@@ -394,6 +417,7 @@ with tab1:
                 st.session_state.chat_messages = []
                 st.session_state.scroll_to_summary = True
                 st.session_state.active_job_id = None
+                fetch_history.clear()  # yeni özet kaydedildi
                 st.rerun()
             elif job["status"] == "cancelled":
                 st.session_state.active_job_id = None
@@ -423,13 +447,20 @@ with tab1:
             if is_detailed
             else concise_overview(str(sections["overview"]))
         )
-        numeric_items = {clean_summary_text(item) for item in sections["numbers"]}
-        highlights = [
-            cleaned
-            for item in sections["highlights"]
-            if (cleaned := clean_summary_text(item)) and cleaned not in numeric_items
-        ][: 8 if is_detailed else 5]
-        facts = numeric_facts(sections["numbers"])
+        # Sayısal maddeler "Ana bulgular"dan çıkarılmaz; kartlar yalnızca hızlı
+        # tarama katmanıdır, bulgunun kendisi listede de kalır. Aksi hâlde
+        # maddelerin çoğu sayısalsa liste neredeyse boş görünüyordu.
+        highlights: list[str] = []
+        seen_highlights: set[str] = set()
+        for item in sections["highlights"]:
+            cleaned = clean_summary_text(item)
+            if cleaned and cleaned.casefold() not in seen_highlights:
+                seen_highlights.add(cleaned.casefold())
+                highlights.append(cleaned)
+        highlights = highlights[: 8 if is_detailed else 5]
+        chips = numeric_chips(
+            overview, sections["numbers"], len(st.session_state.get("latest_text") or "")
+        )
 
         st.markdown(
             '<div id="summary-anchor" class="sd-result-head">'
@@ -439,20 +470,27 @@ with tab1:
         )
         if st.session_state.get("scroll_to_summary"):
             st.session_state.scroll_to_summary = False
-            components.html(
+            st.iframe(
                 """
                 <script>
                   const anchor = window.parent.document.getElementById('summary-anchor');
                   if (anchor) anchor.scrollIntoView({behavior: 'smooth', block: 'start'});
                 </script>
                 """,
-                height=0,
+                height=1,  # st.iframe 0'ı kabul etmiyor; 1px görünmez
             )
+        chip_html = (
+            '<div class="sd-chips">'
+            + "".join(f'<span class="sd-chip">{html.escape(chip)}</span>' for chip in chips)
+            + "</div>"
+            if chips
+            else ""
+        )
         st.markdown(
             '<div class="sd-summary-card"><p class="sd-summary-label">'
             + ("Detaylı özet" if is_detailed else "Kısa özet")
             + "</p>"
-            f'<p class="sd-summary-copy">{html.escape(overview)}</p></div>',
+            f'<p class="sd-summary-copy">{html.escape(overview)}</p></div>{chip_html}',
             unsafe_allow_html=True,
         )
 
@@ -465,28 +503,10 @@ with tab1:
                 unsafe_allow_html=True,
             )
 
-        if facts:
-            st.markdown('<p class="sd-section-label">Öne çıkan sayılar</p>', unsafe_allow_html=True)
-            st.markdown(
-                '<div class="sd-facts">'
-                + "".join(
-                    '<div class="sd-fact">'
-                    f'<p class="sd-fact-value">{html.escape(value)}</p>'
-                    f'<p class="sd-fact-copy">{html.escape(description)}</p></div>'
-                    for value, description in facts
-                )
-                + "</div>",
-                unsafe_allow_html=True,
-            )
-
         action1, action2, action3 = st.columns(3)
         with action1:
             if st.button("Yeni özet oluştur", type="primary", use_container_width=True):
-                st.session_state.latest_summary = None
-                st.session_state.latest_evidence = []
-                st.session_state.latest_text = None
-                st.session_state.latest_length = "balanced"
-                st.session_state.chat_messages = []
+                clear_summary_state()
                 st.rerun()
         with action2:
             copy_summary_button(summary)
@@ -497,34 +517,80 @@ with tab1:
 
         evidence = st.session_state.get("latest_evidence", [])
         if evidence:
-            with st.expander(f"Kaynak kanıtları ({len(evidence)})", expanded=False):
-                st.caption(
-                    "Kaynak kontrollü modda aday parçalar kelime eşleşmesiyle bulunur; ardından iddia ile "
-                    "kanıt arasındaki anlam ilişkisi ayrıca değerlendirilir. Sonuçlar otomatik kontroldür "
-                    "ve kritik kararlarda kaynak belgeyle karşılaştırılmalıdır."
+            with st.container():
+                st.markdown('<span class="sd-exp-primary"></span>', unsafe_allow_html=True)
+                with st.expander(f"Kaynak kanıtları ({len(evidence)})", expanded=False):
+                    st.caption(
+                        "Kaynak kontrollü modda aday parçalar kelime eşleşmesiyle bulunur; ardından iddia ile "
+                        "kanıt arasındaki anlam ilişkisi ayrıca değerlendirilir. Sonuçlar otomatik kontroldür "
+                        "ve kritik kararlarda kaynak belgeyle karşılaştırılmalıdır."
+                    )
+                    status_labels = {
+                        "supported": "Destekleniyor",
+                        "review": "İncelenmeli",
+                        "weak": "Zayıf eşleşme",
+                    }
+                    for index, item in enumerate(evidence, 1):
+                        status = item.get("status", "review")
+                        label = status_labels.get(status, "İncelenmeli")
+                        verification = (
+                            f"anlamsal güven %{round(item['confidence'] * 100)}"
+                            if item.get("verification") == "semantic"
+                            and item.get("confidence") is not None
+                            else f"kelime desteği %{item['support']}"
+                        )
+                        st.markdown(
+                            f'<div class="sd-evidence-item">'
+                            f'<p class="sd-evidence-claim">{index}. {html.escape(item["claim"])}</p>'
+                            f'<p class="sd-evidence-meta">Sayfa {item["page"]}, paragraf {item["paragraph"]} · '
+                            f'<span class="sd-badge {status}">{label}</span> · {verification}</p>'
+                            f'<p class="sd-quote">"{html.escape(item["quote"])}"</p></div>',
+                            unsafe_allow_html=True,
+                        )
+
+        with st.container():
+            st.markdown('<span class="sd-exp-primary"></span>', unsafe_allow_html=True)
+            chat_expander = st.expander("Belgeyle sohbet", expanded=False)
+        with chat_expander:
+            st.caption("Sorular yalnızca bu özetin oluşturulduğu belgeden yanıtlanır.")
+            # text_input tek satırlı olduğundan form içinde Enter, ana özetleme
+            # kutusundaki gibi ekstra bir JS hack'ine gerek kalmadan formu gönderir.
+            with st.form("chat_form", border=False):
+                question = st.text_input(
+                    "Belgeye soru sor",
+                    placeholder="Örneğin: Projenin en önemli riski nedir?",
+                    key="document_question",
                 )
-                status_labels = {
-                    "supported": "Destekleniyor",
-                    "review": "İncelenmeli",
-                    "weak": "Zayıf eşleşme",
-                }
-                for index, item in enumerate(evidence, 1):
-                    status = item.get("status", "review")
-                    label = status_labels.get(status, "İncelenmeli")
-                    verification = (
-                        f"anlamsal güven %{round(item['confidence'] * 100)}"
-                        if item.get("verification") == "semantic"
-                        and item.get("confidence") is not None
-                        else f"kelime desteği %{item['support']}"
+                ask_submitted = st.form_submit_button("Soruyu yanıtla")
+            if ask_submitted:
+                if not st.session_state.latest_text:
+                    st.warning(
+                        "Bu özetin kaynak metni saklanmadığı için belge sohbeti kullanılamıyor."
                     )
-                    st.markdown(
-                        f'<div class="sd-evidence-item">'
-                        f'<p class="sd-evidence-claim">{index}. {html.escape(item["claim"])}</p>'
-                        f'<p class="sd-evidence-meta">Sayfa {item["page"]}, paragraf {item["paragraph"]} · '
-                        f'<span class="sd-badge {status}">{label}</span> · {verification}</p>'
-                        f'<p class="sd-quote">"{html.escape(item["quote"])}"</p></div>',
-                        unsafe_allow_html=True,
-                    )
+                elif not question:
+                    st.warning("Lütfen bir soru yazın.")
+                else:
+                    with st.spinner("Belgede ilgili bölümler aranıyor..."):
+                        try:
+                            answer = api.post_json(
+                                "/chat",
+                                json={
+                                    "text": st.session_state.latest_text,
+                                    "question": question,
+                                },
+                                timeout=(5, 180),
+                            )
+                            st.session_state.chat_messages.append({"question": question, **answer})
+                            st.rerun()
+                        except requests.exceptions.RequestException as error:
+                            st.error(f"Soru yanıtlanamadı: {error_detail(error)}")
+            for message in reversed(st.session_state.chat_messages):
+                st.markdown(f"**Soru:** {message['question']}")
+                st.write(message["answer"])
+                if message["sources"]:
+                    st.markdown("**Kullanılan kaynak parçaları**")
+                    for source in message["sources"]:
+                        st.caption(source)
 
         with st.expander("Ayrıntılı analiz", expanded=is_detailed):
             render_summary_section("Tüm önemli noktalar", sections["important"])
@@ -533,7 +599,10 @@ with tab1:
             st.markdown("##### Modelin özgün çıktısı")
             st.markdown(summary)
 
-        with st.expander("Dışa aktar", expanded=False):
+        with st.container():
+            st.markdown('<span class="sd-exp-muted"></span>', unsafe_allow_html=True)
+            export_expander = st.expander("Dışa aktar", expanded=False)
+        with export_expander:
             export1, export2, export3 = st.columns(3)
             with export1:
                 st.download_button(
@@ -560,43 +629,5 @@ with tab1:
                     use_container_width=True,
                 )
 
-        with st.expander("Belgeyle sohbet", expanded=False):
-            st.caption("Sorular yalnızca bu özetin oluşturulduğu belgeden yanıtlanır.")
-            # text_input tek satırlı olduğundan form içinde Enter, ana özetleme
-            # kutusundaki gibi ekstra bir JS hack'ine gerek kalmadan formu gönderir.
-            with st.form("chat_form", border=False):
-                question = st.text_input(
-                    "Belgeye soru sor",
-                    placeholder="Örneğin: Projenin en önemli riski nedir?",
-                    key="document_question",
-                )
-                ask_submitted = st.form_submit_button("Soruyu yanıtla")
-            if ask_submitted:
-                if not question:
-                    st.warning("Lütfen bir soru yazın.")
-                else:
-                    with st.spinner("Belgede ilgili bölümler aranıyor..."):
-                        try:
-                            response = requests.post(
-                                f"{API_URL}/chat",
-                                headers=auth_headers(),
-                                json={"text": st.session_state.latest_text, "question": question},
-                                timeout=(5, 180),
-                            )
-                            response.raise_for_status()
-                            st.session_state.chat_messages.append(
-                                {"question": question, **response.json()}
-                            )
-                            st.rerun()
-                        except requests.exceptions.RequestException as error:
-                            st.error(f"Soru yanıtlanamadı: {error_detail(error)}")
-            for message in reversed(st.session_state.chat_messages):
-                st.markdown(f"**Soru:** {message['question']}")
-                st.write(message["answer"])
-                if message["sources"]:
-                    st.markdown("**Kullanılan kaynak parçaları**")
-                    for source in message["sources"]:
-                        st.caption(source)
-
-with tab2:
-    render_history(history_data, API_URL, auth_headers)
+if view == "Geçmiş":
+    render_history(history_data, api, fetch_history.clear)

@@ -31,7 +31,12 @@ html, body, [class*="css"], p, div, span, label, button, input, textarea {
 .sd-product-header { max-width:720px; margin-bottom:1rem; }
 .sd-page-title { color:var(--text); font-size:2rem; line-height:1.15; letter-spacing:-.035em; margin:.75rem 0 .65rem; }
 .sd-page-subtitle { color:var(--text-secondary); font-size:1rem; line-height:1.6; margin:0; max-width:680px; }
-.sd-privacy { color:var(--text-tertiary); font-size:.78rem; margin:12px 0 0; }
+.sd-product-header p.sd-privacy {
+  color:var(--text-tertiary) !important;
+  font-size:.63rem !important;
+  line-height:1.35 !important;
+  margin:7px 0 0 !important;
+}
 [data-testid="stTabs"] button { font-weight:600; font-size:.92rem; color:var(--text-tertiary); }
 [data-testid="stTabs"] button[aria-selected="true"] { color:var(--text); }
 [data-testid="stTabs"] [data-baseweb="tab-highlight"] { background-color:var(--accent-solid) !important;
@@ -95,6 +100,27 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, [role="tab"]:
 [data-testid="stExpander"] { border:1px solid var(--border) !important; border-radius:12px !important; background:var(--surface) !important;
   backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
 [data-testid="stExpander"] summary { font-weight:600; font-size:.9rem; color:var(--text); }
+/* Sonuç bölümündeki dört açılır kutu artık üç ağırlıkta: birincil (kaynak
+   kanıtları, belgeyle sohbet), varsayılan (ayrıntılı analiz) ve ikincil (dışa
+   aktar). İşaretçi span'i açılır kutunun hemen öncesindeki kardeş container'da;
+   seçici yalnızca o kardeşi hedeflediğinden diğer açılır kutulara sızmaz. */
+[data-testid="stElementContainer"]:has(.sd-exp-primary) + [data-testid="stExpander"],
+[data-testid="stElementContainer"]:has(.sd-exp-primary) + [data-testid="stElementContainer"] [data-testid="stExpander"] {
+  border-color:var(--border-strong) !important; border-left:3px solid var(--accent-solid) !important; }
+[data-testid="stElementContainer"]:has(.sd-exp-primary) + [data-testid="stExpander"] summary,
+[data-testid="stElementContainer"]:has(.sd-exp-primary) + [data-testid="stElementContainer"] [data-testid="stExpander"] summary {
+  font-size:.95rem; font-weight:700; }
+[data-testid="stElementContainer"]:has(.sd-exp-muted) + [data-testid="stExpander"],
+[data-testid="stElementContainer"]:has(.sd-exp-muted) + [data-testid="stElementContainer"] [data-testid="stExpander"] {
+  border-color:var(--border) !important; background:transparent !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+[data-testid="stElementContainer"]:has(.sd-exp-muted) + [data-testid="stExpander"] summary,
+[data-testid="stElementContainer"]:has(.sd-exp-muted) + [data-testid="stElementContainer"] [data-testid="stExpander"] summary {
+  font-size:.82rem; font-weight:600; color:var(--text-tertiary); }
+[data-testid="stDownloadButton"] button { border-radius:9px; font-weight:600; padding:0.55rem 1.15rem;
+  border:1px solid var(--border-strong); color:var(--text) !important; background:var(--surface-solid); font-size:.88rem;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+[data-testid="stDownloadButton"] button * { color:var(--text) !important; }
+[data-testid="stDownloadButton"] button:hover { border-color:var(--accent-solid); transform:translateY(-1px); }
 .sd-result-head { margin:2.8rem 0 1.3rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
 .sd-result-title { font-size:1.2rem; font-weight:800; color:var(--text); margin:0 0 3px; letter-spacing:-.01em; }
 .sd-result-subtitle { color:var(--text-tertiary); font-size:.83rem; }
@@ -104,14 +130,16 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, [role="tab"]:
 .sd-summary-label { font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-solid); font-weight:700; margin:0 0 11px; }
 .sd-summary-copy { font-size:.97rem; line-height:1.7; color:var(--text); margin:0; }
 .sd-section-label { font-size:.82rem; font-weight:700; color:var(--text); margin:0 0 11px; text-transform:uppercase; letter-spacing:.05em; }
-.sd-highlights { margin:0 0 1.7rem; padding:0; list-style:none; }
-.sd-highlights li { position:relative; padding:2px 0 2px 24px; margin:0 0 .75rem; font-size:.92rem; line-height:1.58; color:var(--text-secondary); }
+.sd-highlights { margin:0 0 1.5rem; padding:0; list-style:none; }
+.sd-highlights li { position:relative; padding:1px 0 1px 24px; margin:0 0 .42rem; font-size:.92rem; line-height:1.5; color:var(--text-secondary); }
+.sd-highlights li:last-child { margin-bottom:0; }
 .sd-highlights li::before { content:"→"; position:absolute; left:0; color:var(--accent-solid); font-weight:700; }
-.sd-facts { display:flex; gap:10px; margin:0 0 1.7rem; flex-wrap:wrap; }
-.sd-fact { flex:1; min-width:140px; border:1px solid var(--border); border-radius:12px; padding:13px 15px; background:var(--surface);
-  border-top:2px solid var(--accent-solid); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
-.sd-fact-value { font-size:1.2rem; font-weight:800; color:var(--text); margin:0 0 3px; letter-spacing:-.01em; }
-.sd-fact-copy { font-size:.76rem; color:var(--text-tertiary); line-height:1.4; margin:0; }
+/* İkincil sayı çipleri: kısa özetin hemen altında, taranabilir ama sessiz.
+   Bağlamı yanlarındaki "Ana bulgular" maddeleri verir; etiket taşımazlar. */
+.sd-chips { display:flex; flex-wrap:wrap; gap:6px; margin:-.6rem 0 1.6rem; }
+.sd-chip { font-size:.78rem; font-weight:600; color:var(--text-secondary);
+  background:var(--surface-alt); border:1px solid var(--border); border-radius:99px;
+  padding:3px 11px; white-space:nowrap; letter-spacing:-.005em; }
 .sd-badge { display:inline-block; padding:2px 9px; border-radius:99px; font-size:.66rem; font-weight:700; border:1px solid transparent; }
 .sd-badge.supported { background:var(--green-soft); color:var(--green); border-color:rgba(52,211,153,.3); }
 .sd-badge.review { background:var(--amber-soft); color:var(--amber); border-color:rgba(251,191,36,.3); }
@@ -140,7 +168,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, [role="tab"]:
   .sd-page-title { font-size:1.55rem; }
   .sd-page-subtitle { font-size:.9rem; }
   .sd-summary-card { padding:1.3rem 1.2rem; }
-  .sd-facts { flex-direction:column; }
   [data-testid="stHorizontalBlock"] { flex-wrap:wrap; gap:.6rem; }
   [data-testid="column"] { min-width:100% !important; width:100% !important; flex:1 1 100% !important; }
   [data-testid="stButton"] button, [data-testid="stDownloadButton"] button { width:100%; }

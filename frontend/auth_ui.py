@@ -1,15 +1,15 @@
 """Hesap güvenliği ve yönetici arayüzü."""
 
 import time
-from collections.abc import Callable
 from typing import Any
 
 import requests
 import streamlit as st
+from api_client import APIClient
 from summary_utils import error_detail
 
 
-def render_account(api_url: str, auth_headers: Callable[[], dict], local_storage: Any) -> None:
+def render_account(api: APIClient, local_storage: Any) -> None:
     st.markdown("#### Şifre ve güvenlik")
 
     with st.form("change_password_form"):
@@ -18,13 +18,11 @@ def render_account(api_url: str, auth_headers: Callable[[], dict], local_storage
         change_password_submitted = st.form_submit_button("Şifreyi değiştir")
     if change_password_submitted:
         try:
-            response = requests.post(
-                f"{api_url}/auth/change-password",
-                headers=auth_headers(),
+            api.post_json(
+                "/auth/change-password",
                 json={"current_password": current_password, "new_password": new_password},
                 timeout=15,
             )
-            response.raise_for_status()
             st.session_state.access_token = None
             local_storage.deleteItem("smartdigest_token")
             st.success("Şifre değiştirildi. Tüm oturumlar kapatıldı; tekrar giriş yapın.")
@@ -35,9 +33,7 @@ def render_account(api_url: str, auth_headers: Callable[[], dict], local_storage
 
     if st.button("Tüm cihazlardaki oturumları kapat"):
         try:
-            requests.post(
-                f"{api_url}/auth/logout-all", headers=auth_headers(), timeout=10
-            ).raise_for_status()
+            api.post_json("/auth/logout-all")
             st.session_state.access_token = None
             local_storage.deleteItem("smartdigest_token")
             st.rerun()
@@ -56,12 +52,7 @@ def render_account(api_url: str, auth_headers: Callable[[], dict], local_storage
             delete_submitted = st.form_submit_button("Hesabı sil", disabled=not delete_confirm)
         if delete_submitted:
             try:
-                requests.delete(
-                    f"{api_url}/auth/account",
-                    headers=auth_headers(),
-                    json={"password": delete_password},
-                    timeout=15,
-                ).raise_for_status()
+                api.delete("/auth/account", json={"password": delete_password}, timeout=15)
                 st.session_state.clear()
                 local_storage.deleteItem("smartdigest_token")
                 st.rerun()
@@ -71,11 +62,7 @@ def render_account(api_url: str, auth_headers: Callable[[], dict], local_storage
     if st.session_state.user_role == "admin":
         st.markdown("### Kullanıcı yönetimi")
         try:
-            users_response = requests.get(
-                f"{api_url}/admin/users", headers=auth_headers(), timeout=10
-            )
-            users_response.raise_for_status()
-            for user in users_response.json():
+            for user in api.get_json("/admin/users"):
                 left, right = st.columns([4, 1])
                 with left:
                     state = "devre dışı" if user["disabled"] else "aktif"
@@ -87,12 +74,10 @@ def render_account(api_url: str, auth_headers: Callable[[], dict], local_storage
                             "Etkinleştir" if user["disabled"] else "Devre dışı bırak",
                             key=f"admin_user_{user['id']}",
                         ):
-                            requests.patch(
-                                f"{api_url}/admin/users/{user['id']}",
-                                headers=auth_headers(),
+                            api.patch_json(
+                                f"/admin/users/{user['id']}",
                                 json={"disabled": target_disabled},
-                                timeout=10,
-                            ).raise_for_status()
+                            )
                             st.rerun()
         except requests.exceptions.RequestException as error:
             st.error(f"Kullanıcılar alınamadı: {error_detail(error)}")

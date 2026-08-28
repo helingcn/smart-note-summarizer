@@ -5,11 +5,13 @@ from collections.abc import Callable
 
 import requests
 import streamlit as st
+from api_client import APIClient
+from state import clear_summary_state, load_summary_into_view
 from summary_utils import error_detail
 
 
 def render_history(
-    history_data: list[dict], api_url: str, auth_headers: Callable[[], dict]
+    history_data: list[dict], api: APIClient, on_history_change: Callable[[], None]
 ) -> None:
     privacy_left, privacy_right = st.columns([3, 2])
     with privacy_left:
@@ -27,14 +29,11 @@ def render_history(
             use_container_width=True,
         ):
             try:
-                requests.delete(
-                    f"{api_url}/history", headers=auth_headers(), timeout=10
-                ).raise_for_status()
-                st.session_state.latest_summary = None
-                st.session_state.latest_evidence = []
-                st.session_state.latest_text = None
-                st.session_state.latest_length = "balanced"
-                st.session_state.chat_messages = []
+                api.delete("/history")
+                on_history_change()
+                # Görüntülenen özet de artık geçmişte yok; eski davranışla tutarlı
+                # olarak sonuç görünümünü de temizliyoruz.
+                clear_summary_state()
                 st.rerun()
             except requests.exceptions.RequestException as error:
                 st.error(f"Geçmiş temizlenemedi: {error_detail(error)}")
@@ -63,27 +62,36 @@ def render_history(
                 f'<p class="sd-history-meta">{meta}</p></div>',
                 unsafe_allow_html=True,
             )
-            action1, action2, action3, _ = st.columns([1.1, 1, 1.3, 3.6])
+            action1, action2, action3, action4 = st.columns([1.1, 1.1, 1, 3.3])
             with action1:
-                st.download_button(
-                    "Özeti indir", item["summary"], f"ozet_{item_id}.txt", key=f"download_{item_id}"
-                )
+                if st.button("Aç", key=f"open_{item_id}", type="primary"):
+                    source_text = None
+                    if item.get("has_source"):
+                        try:
+                            source_text = api.get_json(f"/history/{item_id}/source")["text"]
+                        except requests.exceptions.RequestException as error:
+                            st.warning(f"Kaynak metin yüklenemedi: {error_detail(error)}")
+                    load_summary_into_view(item["summary"], source_text)
+                    st.rerun()
             with action2:
+                st.download_button(
+                    "İndir", item["summary"], f"ozet_{item_id}.txt", key=f"download_{item_id}"
+                )
+            with action3:
                 confirm_key = f"confirm_delete_{item_id}"
                 if st.session_state.get(confirm_key):
                     if st.button("Emin misin?", key=f"delete_confirm_{item_id}", type="primary"):
                         try:
-                            requests.delete(
-                                f"{api_url}/history/{item_id}", headers=auth_headers(), timeout=10
-                            ).raise_for_status()
+                            api.delete(f"/history/{item_id}")
                             st.session_state.pop(confirm_key, None)
+                            on_history_change()
                             st.rerun()
                         except requests.exceptions.RequestException as error:
                             st.error(f"Kayıt silinemedi: {error_detail(error)}")
                 elif st.button("Sil", key=f"delete_{item_id}"):
                     st.session_state[confirm_key] = True
                     st.rerun()
-            with action3:
+            with action4:
                 if item.get("has_source"):
                     source_key = f"fetched_source_{item_id}"
                     if source_key in st.session_state:
@@ -95,13 +103,9 @@ def render_history(
                         )
                     elif st.button("Kaynağı getir", key=f"fetch_source_{item_id}"):
                         try:
-                            source_response = requests.get(
-                                f"{api_url}/history/{item_id}/source",
-                                headers=auth_headers(),
-                                timeout=10,
-                            )
-                            source_response.raise_for_status()
-                            st.session_state[source_key] = source_response.json()["text"]
+                            st.session_state[source_key] = api.get_json(
+                                f"/history/{item_id}/source"
+                            )["text"]
                             st.rerun()
                         except requests.exceptions.RequestException as error:
                             st.error(f"Kaynak getirilemedi: {error_detail(error)}")

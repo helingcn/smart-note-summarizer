@@ -46,3 +46,19 @@ class APIClient:
         )
         response.raise_for_status()
         return response
+
+    # Çağıran taraf yalnızca JSON gövdesiyle ilgileniyor; hata durumunda
+    # requests.exceptions.RequestException fırlar ve arayüzde error_detail ile
+    # kullanıcıya gösterilir. Bu sarmalayıcılar app.py'deki
+    # "requests.X + raise_for_status + .json()" üçlüsünü tek satıra indiriyor.
+    def get_json(self, path: str, **kwargs: Any) -> Any:
+        return self.request("GET", path, **kwargs).json()
+
+    def post_json(self, path: str, **kwargs: Any) -> Any:
+        return self.request("POST", path, **kwargs).json()
+
+    def patch_json(self, path: str, **kwargs: Any) -> Any:
+        return self.request("PATCH", path, **kwargs).json()
+
+    def delete(self, path: str, **kwargs: Any) -> None:
+        self.request("DELETE", path, **kwargs)

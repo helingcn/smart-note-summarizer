@@ -4,18 +4,16 @@ import html
 import json
 
 import streamlit as st
-import streamlit.components.v1 as components
 
 
 def render_summary_section(title: str, content: str | list[str], variant: str = "") -> None:
-    items = content if isinstance(content, list) else []
-    if (isinstance(content, list) and not items) or (
-        isinstance(content, str) and not content.strip()
-    ):
-        return
-    if items:
-        body = "<ul>" + "".join(f"<li>{html.escape(item)}</li>" for item in items) + "</ul>"
+    if isinstance(content, list):
+        if not content:
+            return
+        body = "<ul>" + "".join(f"<li>{html.escape(item)}</li>" for item in content) + "</ul>"
     else:
+        if not content.strip():
+            return
         body = f"<p>{html.escape(content)}</p>"
     st.markdown(
         f'<div class="sd-detail-block"><p class="sd-detail-title {variant}">{title}</p>'
@@ -27,7 +25,8 @@ def render_summary_section(title: str, content: str | list[str], variant: str = 
 def copy_summary_button(summary: str) -> None:
     """Özeti tarayıcı panosuna kopyalayan anlaşılır bir düğme gösterir."""
     safe_summary = json.dumps(summary).replace("<", "\\u003c")
-    components.html(
+    # st.iframe: components.v1.html'in güncel adı; JS çalıştıran iframe.
+    st.iframe(
         f"""
         <style>
           html, body {{ margin:0; background:transparent; font-family:'Inter',system-ui,sans-serif; }}
