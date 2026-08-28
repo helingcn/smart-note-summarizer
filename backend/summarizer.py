@@ -12,9 +12,12 @@ GEMINI_MODEL = "gemini-flash-lite-latest"
 SYSTEM_PROMPT = """Sen SmartDigest'in titiz Türkçe özetleme asistanısın.
 Yalnızca verilen kaynak metindeki bilgilere dayan. Kaynakta olmayan kişi,
 kurum, tarih, sebep, sayı veya sonuç uydurma. Emin olmadığın bilgiyi ekleme.
-Metnin ana amacını, en önemli sonuçlarını, sayısal bulgularını, sınırlılıklarını
-ve gelecek planlarını önceliklendir; küçük teknik ayrıntıları ancak ana sonucu
-anlamak için gerekliyse kullan. Açık, doğal ve tarafsız Türkçe yaz."""
+Kaynakta geçen kişi, kurum ve yer adlarını kaynaktaki yazımıyla birebir aktar;
+tek harf bile değiştirme (ör. "Kaynaklar Bakanlığı"nı "Kazanlar Bakanlığı"
+yapma). Metnin ana amacını, en önemli sonuçlarını, sayısal bulgularını,
+sınırlılıklarını ve gelecek planlarını önceliklendir; küçük teknik ayrıntıları
+ancak ana sonucu anlamak için gerekliyse kullan. Açık, doğal ve tarafsız
+Türkçe yaz."""
 
 
 _client_instance = None
@@ -58,6 +61,7 @@ def _generate_content(contents: str, config: types.GenerateContentConfig):
             if attempt < GEMINI_SERVER_ERROR_RETRIES:
                 time.sleep(2 * (attempt + 1))
                 continue
+    assert last_error is not None
     raise last_error
 
 
@@ -193,6 +197,13 @@ def _drop_incomplete_highlights(highlights: list[str]) -> list[str]:
     return [item for item in highlights if SENTENCE_END.search(item.strip())]
 
 
+MODALITY_RULE = """Kaynağın kipini koru. Kaynak "öneriyor", "tavsiye ediyor",
+"beklenmektedir" gibi ifadeler kullanıyorsa özet bunları "zorunlu", "şart",
+"mecburi", "kesin" gibi daha güçlü kiplerle değiştirmesin; aynı şekilde bir
+zorunluluğu öneri gibi yumuşatmasın. "Kılavuz", "rehber", "tavsiye" gibi
+bağlayıcı olmayan bir belgeyi "düzenleme", "yönetmelik", "yasa" yapma."""
+
+
 def ask_for_summary(
     prompt: str, max_bullets: int, max_tokens: int, source_text: str, min_words: int = 0
 ) -> str:
@@ -229,7 +240,9 @@ temayı tekrar özetlemesin; overview'un değinmediği yeni bilgi eklesin.
 `highlights`'taki hiçbir madde, `overview`'daki herhangi bir cümleyi kelimesi
 kelimesine veya neredeyse aynı ifadeyle tekrar etmesin. `overview`'daki hiçbir
 cümle, kaynakta farklı bağlamlarda geçen birden fazla farklı olayı veya kurumu
-zorla birbirine bağlamasın; her cümle tek bir ana fikre/kaynağa dayansın."""
+zorla birbirine bağlamasın; her cümle tek bir ana fikre/kaynağa dayansın.
+
+{MODALITY_RULE}"""
 
     def call(prompt_text: str, num_predict: int):
         return _generate_content(
@@ -323,7 +336,9 @@ kopyalayarak değil."""
 
 NUMBER_RULE = """Kaynakta somut sayı, yüzde veya tutar geçiyorsa `overview` bunlardan en az
 ikisini rakamla yazmalı; "ciddi oranda", "önemli ölçüde", "belirgin şekilde" gibi
-belirsiz ifadelerle geçiştirmemeli."""
+belirsiz ifadelerle geçiştirmemeli. Sayı, oran ve aralıkları hem `overview` hem
+`highlights` içinde rakamla yaz: "üç ila dört" yerine "3-4", "yüzde otuz" yerine
+"%30", bir değişim varsa "1.500'den 3.500'e" biçiminde. Sayıları yazıyla verme."""
 
 
 def summary_format(text_length: int, length: str = "balanced") -> str:
@@ -428,6 +443,8 @@ def verify_summary(
 Kurallar:
 - Her iddia, sayı, oran, tarih ve özne ilişkisi doğrulama kaynağında açıkça yer almalı.
 - Kaynakta olmayan veya yanlış bağlanan bilgiyi çıkar ya da doğru hâliyle değiştir.
+- Kişi, kurum ve yer adlarını kaynaktaki yazımıyla harfi harfine karşılaştır;
+farklıysa kaynaktaki yazımla düzelt.
 - Özellikle toplam sayılar ile alt küme sayılarını karıştırma.
 - Kritik bilgileri koru: amaç/kapsam, ölçülebilir sonuç, önemli sınırlılık veya
 eleştiri ve varsa gelecek planı.
@@ -435,6 +452,7 @@ eleştiri ve varsa gelecek planı.
 veya sonuç varsa, en az önemli veya tekrarcı maddenin yerine bunu ekle.
 - Yeni yorum ekleme.
 - {NUMBER_RULE}
+- {MODALITY_RULE}
 
 ADAY ÖZET:
 {candidate}
@@ -466,7 +484,13 @@ def summarize_long_text(
     if verified:
         direct_limit = min(direct_limit, 3_000)
     if len(text) <= direct_limit:
-        _report(on_progress, 20, "Taslak özet oluşturuluyor…")
+        # "Taslak" yalnızca kaynak kontrollü modda doğru: orada bu çıktı bir sonraki
+        # adımda kaynaklarla doğrulanıp düzeltiliyor. Hızlı modda bu nihai özettir.
+        _report(
+            on_progress,
+            20,
+            "Taslak özet oluşturuluyor…" if verified else "Özet oluşturuluyor…",
+        )
         candidate = summarize_text(text, length=length)
         max_tokens = max_output_tokens(len(text), length)
         min_words, _ = word_target(len(text), length)
@@ -597,7 +621,7 @@ def _passages(text: str) -> list[tuple[int, int, str]]:
             pages.append((int(match.group(1)), text[match.end() : end]))
     else:
         pages = [(1, text)]
-    output = []
+    output: list[tuple[int, int, str]] = []
     for page_no, page_text in pages:
         chunks = [
             part.strip() for part in re.split(r"\n\s*\n|(?<=[.!?])\s+", page_text) if part.strip()
