@@ -11,14 +11,7 @@ addopts = "--strict-markers"
 [tool.coverage.run]
 branch = true
 source = ["backend", "frontend", "evals"]
-omit = [
-  "*/test_*.py",
-  "frontend/app.py",
-  "frontend/auth_ui.py",
-  "frontend/history_ui.py",
-  "frontend/state.py",
-  "frontend/summary_ui.py",
-]
+omit = ["*/test_*.py"]
 
 [tool.coverage.report]
 show_missing = true

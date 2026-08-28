@@ -24,7 +24,11 @@ jobs:
       - name: Ruff format kontrolü
         run: ruff format --check backend frontend evals scripts test_extractor.py
       - name: Statik tip kontrolü
-        run: mypy backend/models.py frontend/summary_utils.py evals/schemas.py evals/metrics.py
+        run: >
+          mypy backend
+          frontend/summary_utils.py frontend/api_client.py frontend/state.py frontend/summary_ui.py
+          evals/schemas.py evals/metrics.py
+          --exclude 'test_'
       - name: Test ve coverage
         run: pytest -m "not live_api and not e2e" --cov --cov-report=term-missing --cov-report=xml
       - uses: actions/upload-artifact@v4
