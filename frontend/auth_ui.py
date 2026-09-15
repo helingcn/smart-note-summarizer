@@ -13,8 +13,10 @@ def render_account(api: APIClient, local_storage: Any) -> None:
     st.markdown("#### Şifre ve güvenlik")
 
     with st.form("change_password_form"):
-        current_password = st.text_input("Mevcut şifre", type="password")
-        new_password = st.text_input("Yeni şifre", type="password")
+        current_password = st.text_input(
+            "Mevcut şifre", type="password", autocomplete="current-password"
+        )
+        new_password = st.text_input("Yeni şifre", type="password", autocomplete="new-password")
         change_password_submitted = st.form_submit_button("Şifreyi değiştir")
     if change_password_submitted:
         try:
@@ -47,7 +49,9 @@ def render_account(api: APIClient, local_storage: Any) -> None:
             "Bu işlem hesabınızı, özetlerinizi ve saklanan kaynaklarınızı geri alınamaz biçimde siler."
         )
         with st.form("delete_account_form"):
-            delete_password = st.text_input("Onay için şifreniz", type="password")
+            delete_password = st.text_input(
+                "Onay için şifreniz", type="password", autocomplete="current-password"
+            )
             delete_confirm = st.checkbox("Hesabımın ve tüm verilerimin silinmesini onaylıyorum")
             delete_submitted = st.form_submit_button("Hesabı sil", disabled=not delete_confirm)
         if delete_submitted:

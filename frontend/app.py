@@ -55,8 +55,12 @@ reset_token = st.query_params.get("reset_token")
 if reset_token and not st.session_state.access_token:
     st.markdown('<p class="sd-name">SmartDigest · Şifre sıfırlama</p>', unsafe_allow_html=True)
     with st.form("reset_password_form"):
-        reset_password_value = st.text_input("Yeni şifre", type="password")
-        reset_password_confirm = st.text_input("Yeni şifreyi tekrar yazın", type="password")
+        reset_password_value = st.text_input(
+            "Yeni şifre", type="password", autocomplete="new-password"
+        )
+        reset_password_confirm = st.text_input(
+            "Yeni şifreyi tekrar yazın", type="password", autocomplete="new-password"
+        )
         reset_submitted = st.form_submit_button("Şifreyi güncelle", type="primary")
     if reset_submitted:
         if reset_password_value != reset_password_confirm:
@@ -93,8 +97,10 @@ if not st.session_state.access_token:
     login_tab, register_tab = st.tabs(["Giriş yap", "Kayıt ol"])
     with login_tab:
         with st.form("login_form"):
-            login_email = st.text_input("E-posta", key="login_email")
-            login_password = st.text_input("Şifre", type="password", key="login_password")
+            login_email = st.text_input("E-posta", key="login_email", autocomplete="username")
+            login_password = st.text_input(
+                "Şifre", type="password", key="login_password", autocomplete="current-password"
+            )
             login_submitted = st.form_submit_button(
                 "Giriş yap", type="primary", use_container_width=True
             )
@@ -113,7 +119,9 @@ if not st.session_state.access_token:
             except requests.exceptions.RequestException as error:
                 st.error(f"Giriş başarısız: {error_detail(error)}")
         with st.expander("Şifremi unuttum", expanded=False):
-            forgot_email = st.text_input("Hesap e-postası", key="forgot_email")
+            forgot_email = st.text_input(
+                "Hesap e-postası", key="forgot_email", autocomplete="email"
+            )
             if st.button("Sıfırlama bağlantısı gönder", key="forgot_submit"):
                 try:
                     data = api.post_json("/auth/forgot-password", json={"email": forgot_email})
@@ -124,9 +132,12 @@ if not st.session_state.access_token:
                     st.error(f"İstek gönderilemedi: {error_detail(error)}")
     with register_tab:
         with st.form("register_form"):
-            register_email = st.text_input("E-posta", key="register_email")
+            register_email = st.text_input("E-posta", key="register_email", autocomplete="email")
             register_password = st.text_input(
-                "Şifre (en az 8 karakter)", type="password", key="register_password"
+                "Şifre (en az 8 karakter)",
+                type="password",
+                key="register_password",
+                autocomplete="new-password",
             )
             register_submitted = st.form_submit_button(
                 "Kayıt ol", type="primary", use_container_width=True
@@ -169,21 +180,24 @@ def extract_pdf_text(file_bytes: bytes, file_name: str, token: str) -> dict:
     )
 
 
-st.markdown(
-    """
-    <div class="sd-product-header">
-      <p class="sd-name">SmartDigest</p>
-      <h1 class="sd-page-title">Belge Özetleme ve Kaynak Analizi</h1>
-      <p class="sd-page-subtitle">PDF belgelerini veya metinleri özetleyin; önemli bulguları,
-      sayıları ve kaynak eşleşmelerini tek yerde inceleyin.</p>
-      <p class="sd-privacy">Belge içeriği özetleme sırasında Google Gemini API'ye gönderilir.</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-header_space, header_account = st.columns([5, 1.2])
+header_content, header_account = st.columns([5, 1.2])
+with header_content:
+    st.markdown(
+        """
+        <div class="sd-product-header">
+          <p class="sd-name">SmartDigest</p>
+          <h1 class="sd-page-title">Belge Özetleme ve Kaynak Analizi</h1>
+          <p class="sd-page-subtitle">PDF belgelerini veya metinleri özetleyin; önemli bulguları,
+          sayıları ve kaynak eşleşmelerini tek yerde inceleyin.</p>
+          <p class="sd-privacy">Belge içeriği özetleme sırasında Google Gemini API'ye gönderilir.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 with header_account:
+    # Hesap düğmesi başlıkla aynı satırda, sağ üstte kalsın diye başlıkla
+    # yan yana sütunlara alındı; önceden ayrı bir satırda, tüm başlık
+    # metninin altında görünüyordu.
     with st.popover("Hesap", use_container_width=True):
         st.caption(st.session_state.user_email)
         render_account(api, local_storage)
