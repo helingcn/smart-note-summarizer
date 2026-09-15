@@ -1,0 +1,12 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.smartdigest-data/
+*.db
+*.log
+.pytest_cache/
+.env
+evals/reports/

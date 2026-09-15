@@ -1,5 +1,6 @@
 # Python
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
@@ -7,6 +8,8 @@ __pycache__/
 # Environment / secrets
 .env
 *.env.local
+.smartdigest.key
+.smartdigest.jwt_secret
 
 # OS
 .DS_Store
@@ -20,6 +23,16 @@ __pycache__/
 
 # Database
 *.db
+
+# Generated evaluation reports
+evals/reports/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+test-results/
+playwright-report/
 
 # Claude
 .claude/

@@ -1,0 +1,175 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root {
+  --bg:#08080d; --surface:rgba(255,255,255,.04); --surface-solid:#111116; --surface-alt:rgba(255,255,255,.03);
+  --text:#f5f5f7; --text-secondary:#b8b8c5; --text-tertiary:#9292a5;
+  --border:rgba(255,255,255,.09); --border-strong:rgba(255,255,255,.16);
+  --accent-1:#10b981; --accent-2:#059669; --accent-solid:#34d399; --accent-glow:rgba(16,185,129,.45);
+  --accent-soft:rgba(16,185,129,.14); --accent-soft-text:#86efac;
+  --teal:#2dd4bf; --teal-soft:rgba(45,212,191,.14);
+  --green:#34d399; --green-soft:rgba(52,211,153,.14);
+  --amber:#fbbf24; --amber-soft:rgba(251,191,36,.14);
+}
+html, body, [class*="css"], p, div, span, label, button, input, textarea {
+  font-family:'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+[data-testid="stIconMaterial"] {
+  font-family:'Material Symbols Rounded' !important;
+}
+[data-testid="stAppViewContainer"] {
+  background:
+    radial-gradient(1100px 560px at 12% -8%, rgba(16,185,129,.20), transparent 60%),
+    radial-gradient(900px 520px at 100% 6%, rgba(5,150,105,.14), transparent 55%),
+    var(--bg);
+  color:var(--text);
+}
+[data-testid="stHeader"] { background:transparent; }
+[data-testid="stToolbar"] { display:none !important; }
+.stDeployButton, [data-testid="stDeployButton"] { display:none !important; }
+#MainMenu { visibility:hidden !important; }
+.block-container { max-width:900px; padding-top:2.4rem; padding-bottom:4.5rem; }
+.sd-name { font-size:1.05rem; font-weight:700; margin:0; letter-spacing:-.01em; color:var(--text); }
+.sd-product-header { max-width:720px; margin-bottom:1rem; }
+.sd-page-title { color:var(--text); font-size:2rem; line-height:1.15; letter-spacing:-.035em; margin:.75rem 0 .65rem; }
+.sd-page-subtitle { color:var(--text-secondary); font-size:1rem; line-height:1.6; margin:0; max-width:680px; }
+.sd-product-header p.sd-privacy {
+  color:var(--text-tertiary) !important;
+  font-size:.63rem !important;
+  line-height:1.35 !important;
+  margin:7px 0 0 !important;
+}
+[data-testid="stTabs"] button { font-weight:600; font-size:.92rem; color:var(--text-tertiary); }
+[data-testid="stTabs"] button[aria-selected="true"] { color:var(--text); }
+[data-testid="stTabs"] [data-baseweb="tab-highlight"] { background-color:var(--accent-solid) !important;
+  box-shadow:0 0 10px var(--accent-glow); }
+[data-testid="stTabs"] [data-baseweb="tab-border"] { background-color:var(--border) !important; }
+/* Streamlit'in st.container(border=True) için verdiği testid sürüme göre değişiyor
+   (ör. stVerticalBlockBorderWrapper -> stLayoutWrapper); bu yüzden kartın kendi
+   işaretçi sınıfını (.sd-panel-title) içeren stVerticalBlock'u :has() ile buluyoruz. */
+[data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .sd-panel-title) { background:var(--surface) !important; border:1px solid var(--border) !important;
+  border-radius:16px !important; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  box-shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 40px -16px rgba(0,0,0,.65), inset 0 1px 0 rgba(255,255,255,.05) !important; }
+.sd-panel-title { font-size:1.06rem; font-weight:700; color:var(--text); margin:0 0 3px; letter-spacing:-.01em; }
+.sd-panel-copy { color:var(--text-tertiary); font-size:.84rem; margin:0 0 20px; }
+.sd-field-label { font-size:.72rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-tertiary);
+  font-weight:700; margin:18px 0 7px; }
+.sd-field-label:first-of-type { margin-top:0; }
+[data-testid="stFileUploader"] { border:1.5px dashed var(--border-strong); border-radius:10px; padding:6px; background:var(--surface-alt); }
+[data-testid="stFileUploader"] small { color:var(--text-tertiary); }
+[data-testid="stFileUploaderDropzone"] button { font-size:0 !important; border-color:var(--border) !important;
+  color:var(--text) !important; background:var(--surface-solid) !important; }
+[data-testid="stFileUploaderDropzone"] button > * { display:none !important; }
+[data-testid="stFileUploaderDropzone"] button::after { content:"PDF seç"; font-size:.85rem; font-weight:600; font-family:'Inter'; }
+[data-testid="stFileUploaderDropzoneInstructions"] > * { display:none !important; }
+[data-testid="stFileUploaderDropzoneInstructions"]::after { content:"En fazla 200 MB · PDF"; display:block;
+  font-size:.76rem; color:var(--text-tertiary); white-space:nowrap; }
+.stTextArea textarea { border-radius:10px !important; border-color:var(--border) !important; background:var(--surface-solid) !important;
+  color:var(--text) !important; font-family:'Inter' !important; font-size:.92rem !important; line-height:1.55 !important; }
+.stTextInput input { border-radius:10px !important; border-color:var(--border) !important; background:var(--surface-solid) !important; color:var(--text) !important; }
+.stTextArea textarea:focus, .stTextInput input:focus {
+  border-color:var(--accent-solid) !important; box-shadow:0 0 0 3px var(--accent-soft) !important; }
+.stSelectbox [data-baseweb="select"] { border-radius:10px !important; }
+.stCheckbox input { accent-color:var(--accent-solid) !important; }
+[data-testid="stButtonGroup"] { gap:7px; }
+[data-testid="stButtonGroup"] button[data-variant="segmented_control"] {
+  border-radius:8px !important; border:1px solid var(--border) !important; background:var(--surface-solid) !important;
+  color:var(--text-secondary) !important; font-weight:600; font-size:.85rem; padding:.45rem 1rem !important;
+  transition:background .15s ease, border-color .15s ease, box-shadow .15s ease, color .15s ease; }
+[data-testid="stButtonGroup"] button[data-variant="segmented_control"]:hover {
+  border-color:var(--accent-solid) !important; color:var(--text) !important; }
+[data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"] {
+  background:linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important; border-color:transparent !important;
+  box-shadow:0 4px 14px -4px var(--accent-glow); }
+[data-testid="stButtonGroup"] button[data-variant="segmented_control"][aria-checked="true"] * { color:#ffffff !important; }
+[data-testid="stButton"] button, [data-testid="stFormSubmitButton"] button { border-radius:9px; font-weight:600; padding:0.55rem 1.15rem;
+  border:1px solid var(--border); color:var(--text); background:var(--surface-solid); font-size:.88rem;
+  transition:transform .12s ease, box-shadow .12s ease; }
+[data-testid="stBaseButton-primary"], [data-testid="stBaseButton-primaryFormSubmit"] {
+  background:linear-gradient(135deg, var(--accent-1), var(--accent-2)) !important; border:none !important;
+  color:#ffffff !important; opacity:1 !important; box-shadow:0 4px 16px -4px var(--accent-glow); }
+[data-testid="stBaseButton-primary"] *, [data-testid="stBaseButton-primaryFormSubmit"] * { color:#ffffff !important; opacity:1 !important; }
+[data-testid="stBaseButton-primary"]:hover, [data-testid="stBaseButton-primaryFormSubmit"]:hover {
+  box-shadow:0 6px 22px -4px var(--accent-glow); transform:translateY(-1px); }
+[data-testid="stBaseButton-primary"]:disabled, [data-testid="stBaseButton-primaryFormSubmit"]:disabled { opacity:.4 !important; cursor:not-allowed; }
+button:focus-visible, input:focus-visible, textarea:focus-visible, [role="tab"]:focus-visible {
+  outline:3px solid rgba(52,211,153,.55) !important; outline-offset:2px !important; }
+[data-testid="stPopoverBody"] { min-width:min(440px, calc(100vw - 32px)); }
+[data-testid="stProgressBarTrack"] { background:rgba(255,255,255,.08) !important; border-radius:99px; }
+[data-testid="stProgressBarTrack"] > div { background-image:linear-gradient(90deg, var(--accent-1), var(--accent-2)) !important; background-color:transparent !important; }
+[data-testid="stProgress"] [role="progressbar"] > div {
+  background-image:linear-gradient(90deg, var(--accent-1), var(--accent-2)) !important; }
+[data-testid="stExpander"] { border:1px solid var(--border) !important; border-radius:12px !important; background:var(--surface) !important;
+  backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
+[data-testid="stExpander"] summary { font-weight:600; font-size:.9rem; color:var(--text); }
+/* Sonuç bölümündeki dört açılır kutu artık üç ağırlıkta: birincil (kaynak
+   kanıtları, belgeyle sohbet), varsayılan (ayrıntılı analiz) ve ikincil (dışa
+   aktar). İşaretçi span'i açılır kutunun hemen öncesindeki kardeş container'da;
+   seçici yalnızca o kardeşi hedeflediğinden diğer açılır kutulara sızmaz. */
+[data-testid="stElementContainer"]:has(.sd-exp-primary) + [data-testid="stExpander"],
+[data-testid="stElementContainer"]:has(.sd-exp-primary) + [data-testid="stElementContainer"] [data-testid="stExpander"] {
+  border-color:var(--border-strong) !important; border-left:3px solid var(--accent-solid) !important; }
+[data-testid="stElementContainer"]:has(.sd-exp-primary) + [data-testid="stExpander"] summary,
+[data-testid="stElementContainer"]:has(.sd-exp-primary) + [data-testid="stElementContainer"] [data-testid="stExpander"] summary {
+  font-size:.95rem; font-weight:700; }
+[data-testid="stElementContainer"]:has(.sd-exp-muted) + [data-testid="stExpander"],
+[data-testid="stElementContainer"]:has(.sd-exp-muted) + [data-testid="stElementContainer"] [data-testid="stExpander"] {
+  border-color:var(--border) !important; background:transparent !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important; }
+[data-testid="stElementContainer"]:has(.sd-exp-muted) + [data-testid="stExpander"] summary,
+[data-testid="stElementContainer"]:has(.sd-exp-muted) + [data-testid="stElementContainer"] [data-testid="stExpander"] summary {
+  font-size:.82rem; font-weight:600; color:var(--text-tertiary); }
+[data-testid="stDownloadButton"] button { border-radius:9px; font-weight:600; padding:0.55rem 1.15rem;
+  border:1px solid var(--border-strong); color:var(--text) !important; background:var(--surface-solid); font-size:.88rem;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease; }
+[data-testid="stDownloadButton"] button * { color:var(--text) !important; }
+[data-testid="stDownloadButton"] button:hover { border-color:var(--accent-solid); transform:translateY(-1px); }
+.sd-result-head { margin:2.8rem 0 1.3rem; padding-bottom:1rem; border-bottom:1px solid var(--border); }
+.sd-result-title { font-size:1.2rem; font-weight:800; color:var(--text); margin:0 0 3px; letter-spacing:-.01em; }
+.sd-result-subtitle { color:var(--text-tertiary); font-size:.83rem; }
+.sd-summary-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.6rem 1.7rem; margin-bottom:1.5rem;
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  box-shadow:0 1px 2px rgba(0,0,0,.4), 0 16px 40px -18px rgba(16,185,129,.25), inset 0 1px 0 rgba(255,255,255,.05); }
+.sd-summary-label { font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--accent-solid); font-weight:700; margin:0 0 11px; }
+.sd-summary-copy { font-size:.97rem; line-height:1.7; color:var(--text); margin:0; }
+.sd-section-label { font-size:.82rem; font-weight:700; color:var(--text); margin:0 0 11px; text-transform:uppercase; letter-spacing:.05em; }
+.sd-highlights { margin:0 0 1.5rem; padding:0; list-style:none; }
+.sd-highlights li { position:relative; padding:1px 0 1px 24px; margin:0 0 .42rem; font-size:.92rem; line-height:1.5; color:var(--text-secondary); }
+.sd-highlights li:last-child { margin-bottom:0; }
+.sd-highlights li::before { content:"→"; position:absolute; left:0; color:var(--accent-solid); font-weight:700; }
+/* İkincil sayı çipleri: kısa özetin hemen altında, taranabilir ama sessiz.
+   Bağlamı yanlarındaki "Ana bulgular" maddeleri verir; etiket taşımazlar. */
+.sd-chips { display:flex; flex-wrap:wrap; gap:6px; margin:-.6rem 0 1.6rem; }
+.sd-chip { font-size:.78rem; font-weight:600; color:var(--text-secondary);
+  background:var(--surface-alt); border:1px solid var(--border); border-radius:99px;
+  padding:3px 11px; white-space:nowrap; letter-spacing:-.005em; }
+.sd-badge { display:inline-block; padding:2px 9px; border-radius:99px; font-size:.66rem; font-weight:700; border:1px solid transparent; }
+.sd-badge.supported { background:var(--green-soft); color:var(--green); border-color:rgba(52,211,153,.3); }
+.sd-badge.review { background:var(--amber-soft); color:var(--amber); border-color:rgba(251,191,36,.3); }
+.sd-badge.weak { background:var(--surface-alt); color:var(--text-tertiary); border-color:var(--border); }
+.sd-evidence-item { padding:13px 0; border-bottom:1px solid var(--border); }
+.sd-evidence-item:last-child { border-bottom:none; }
+.sd-evidence-claim { font-weight:600; font-size:.88rem; color:var(--text); margin:0 0 4px; }
+.sd-evidence-meta { font-size:.74rem; color:var(--text-tertiary); margin:0 0 7px; }
+.sd-quote { color:var(--text-secondary); border-left:2px solid var(--accent-soft); padding-left:12px; margin:0; font-size:.86rem; line-height:1.5; }
+.sd-detail-block { background:var(--surface-alt); border:1px solid var(--border); border-radius:10px; padding:15px 17px; margin-bottom:11px; }
+.sd-detail-title { font-size:.68rem; letter-spacing:.05em; text-transform:uppercase; font-weight:700; color:var(--accent-solid); margin:0 0 9px; }
+.sd-detail-title.number { color:var(--teal); }
+.sd-detail-title.result { color:var(--green); }
+.sd-detail-body { font-size:.86rem; line-height:1.58; color:var(--text-secondary); margin:0; }
+.sd-detail-body ul { margin:.2rem 0 0; padding-left:1.1rem; }
+.sd-detail-body li { margin:.35rem 0; }
+.sd-history-item { padding:.2rem 0 .8rem; }
+.sd-history-date { font-size:.72rem; color:var(--text-tertiary); margin:0 0 5px; }
+.sd-history-summary { font-size:.9rem; line-height:1.5; color:var(--text); margin:0 0 5px; }
+.sd-history-meta { font-size:.72rem; color:var(--text-tertiary); margin:0; }
+[data-testid="stVerticalBlock"]:has(.sd-history-card) {
+  background:var(--surface); border:1px solid var(--border); border-radius:14px;
+  padding:1rem 1.1rem; margin:.8rem 0; box-shadow:0 10px 30px -22px rgba(0,0,0,.8); }
+@media (max-width:720px) {
+  .block-container { padding:1.25rem 1rem 3rem; }
+  .sd-page-title { font-size:1.55rem; }
+  .sd-page-subtitle { font-size:.9rem; }
+  .sd-summary-card { padding:1.3rem 1.2rem; }
+  [data-testid="stHorizontalBlock"] { flex-wrap:wrap; gap:.6rem; }
+  [data-testid="column"] { min-width:100% !important; width:100% !important; flex:1 1 100% !important; }
+  [data-testid="stButton"] button, [data-testid="stDownloadButton"] button { width:100%; }
+  [data-testid="stTabs"] button { padding-left:.7rem; padding-right:.7rem; }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "SmartDigest başlangıç seti",
+  "version": "1.0",
+  "cases": [
+    {
+      "id": "sample-company-report",
+      "title": "Örnek şirket raporu",
+      "source_text": "[Sayfa 1]\nŞirketin 2025 yılı geliri yüzde 20 azalarak 8 milyon TL oldu. Personel sayısı 240 kişiye yükseldi.\n\n[Sayfa 2]\nYönetim, enerji maliyetlerini temel risk olarak açıkladı.",
+      "expected": {
+        "facts": [
+          {"text": "Şirketin geliri yüzde 20 azalarak 8 milyon TL oldu.", "source_pages": [1]},
+          {"text": "Personel sayısı 240 kişiye yükseldi.", "source_pages": [1]},
+          {"text": "Enerji maliyetleri temel risk olarak açıklandı.", "source_pages": [2]}
+        ],
+        "numbers": [
+          {"value": "20", "context": "gelir", "direction": "down"},
+          {"value": "8", "context": "gelir milyon TL"},
+          {"value": "240", "context": "personel"}
+        ],
+        "qa": [
+          {"question": "Şirketin temel riski nedir?", "answer": "Enerji maliyetleri temel risktir.", "source_pages": [2]}
+        ]
+      },
+      "candidate": {
+        "summary": "- Şirket geliri yüzde 20 azalarak 8 milyon TL oldu.\n- Personel sayısı 240 kişiye yükseldi.\n- Enerji maliyetleri temel risk olarak açıklandı.",
+        "qa": [
+          {"question": "Şirketin temel riski nedir?", "answer": "Temel risk enerji maliyetleridir.", "sources": ["Sayfa 2, paragraf 1"]}
+        ],
+        "latency_seconds": 1.25
+      }
+    }
+  ]
+}
